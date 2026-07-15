@@ -1,0 +1,16 @@
+{
+  "name": "mecojoni",
+  "version": "0.0.1",
+  "private": true,
+  "description": "A small proof of concept for a Markdown-like context-free text generator.",
+  "type": "module",
+  "bin": {
+    "meco": "./src/cli.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
