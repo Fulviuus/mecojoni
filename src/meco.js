@@ -13,13 +13,15 @@ function diagnostic(filename, line, message) {
 }
 
 function parseProduction(text, filename, line) {
+  // The mathematical symbol remains a compatibility alias. The keyboard-
+  // friendly @empty built-in is parsed with other references below.
   if (text === "ε") {
     return [];
   }
 
   if (text.length === 0) {
     throw new MecoError("Invalid empty production", [
-      diagnostic(filename, line, "use ε for an empty production"),
+      diagnostic(filename, line, "use @empty for an empty production"),
     ]);
   }
 
@@ -56,7 +58,9 @@ function parseProduction(text, filename, line) {
     }
 
     flushLiteral();
-    parts.push({ type: "nonterminal", name: match[0] });
+    if (match[0] !== "empty") {
+      parts.push({ type: "nonterminal", name: match[0] });
+    }
     cursor += match[0].length + 1;
   }
 
@@ -108,7 +112,12 @@ export function compile(source, options = {}) {
     const ruleMatch = trimmed.match(/^#\s+(.+?)\s*$/);
     if (ruleMatch) {
       const name = ruleMatch[1];
-      if (!RULE_NAME.test(name)) {
+      if (name === "empty") {
+        diagnostics.push(
+          diagnostic(filename, lineNumber, "rule name empty is reserved for the @empty built-in"),
+        );
+        currentRule = null;
+      } else if (!RULE_NAME.test(name)) {
         diagnostics.push(
           diagnostic(filename, lineNumber, `invalid rule name ${JSON.stringify(name)}`),
         );
@@ -443,7 +452,7 @@ export class MecoGenerator {
     this.fragmentMaxWords = options.fragmentMaxWords ?? 8;
     this.productionDiversities = estimateProductionDiversities(grammar);
     this.recursiveRules = findRecursiveRules(grammar);
-    this.epsilonRules = new Set(
+    this.emptyRules = new Set(
       [...grammar.rules.values()]
         .filter((rule) => rule.productions.some((production) => production.parts.length === 0))
         .map((rule) => rule.name),
@@ -467,11 +476,11 @@ export class MecoGenerator {
   chooseProduction(rule) {
     const diversity = this.productionDiversities.get(rule.name);
     const recursive = this.recursiveRules.has(rule.name);
-    const probabilitySensitive = recursive || this.epsilonRules.has(rule.name);
+    const probabilitySensitive = recursive || this.emptyRules.has(rule.name);
     let weights = rule.productions.map((production, index) => {
       // Recursive branch weights usually encode the grammar author's
-      // termination strategy. Epsilon weights similarly encode optionality.
-      // Do not distort or cooldown either kind of choice.
+      // termination strategy. Empty-production weights similarly encode
+      // optionality. Do not distort or cooldown either kind of choice.
       if (this.selection === "random" || probabilitySensitive) return production.weight;
       const descendants = Math.max(1, diversity?.[index] ?? 1);
       const boost = Math.min(

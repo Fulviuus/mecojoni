@@ -216,14 +216,14 @@ to add up to any particular total, and decimal weights are valid.
 
 ### Empty productions and optional text
 
-The Greek letter `ε` represents an empty production:
+The ASCII built-in `@empty` represents an empty production:
 
 ```meco
 # greeting
 - Welcome, @name@title-option.
 
 # title-option
-- [3] ε
+- [3] @empty
 - [1]  the @title
 
 # name
@@ -235,8 +235,13 @@ The Greek letter `ε` represents an empty production:
 - Doctor
 ```
 
-Rules containing `ε` are probability-sensitive. The varied sampler preserves
-their author-defined weights instead of applying cooldown or diversity boosts.
+`@empty` is deliberately easy to type, search for, and recognize in any editor.
+The conventional mathematical symbol `ε` remains accepted as a compatibility
+alias, but authors never need to type it.
+
+Rules containing an empty production are probability-sensitive. The varied
+sampler preserves their author-defined weights instead of applying cooldown or
+diversity boosts. The rule name `empty` is reserved for this built-in.
 
 ### Recursion
 
@@ -356,9 +361,9 @@ previous 300 generated phrases. Two-word fragments are also tracked at internal
 sentence boundaries. Exact normalized lines are remembered across the previous
 50,000 phrases.
 
-Recursive rules and rules containing `ε` are exempt from structural cooldowns
-and diversity boosts, because their weights commonly control termination and
-optionality.
+Recursive rules and rules containing `@empty` are exempt from structural
+cooldowns and diversity boosts, because their weights commonly control
+termination and optionality.
 
 Novelty state belongs to a `MecoGenerator` instance. Reuse one generator for a
 dialogue pool when nearby NPCs should avoid each other's recent phrasing. If
@@ -500,7 +505,7 @@ Before returning a grammar, `compile()` checks:
 - invalid or undefined start rules;
 - invalid and duplicate rule names;
 - productions outside rule sections;
-- empty productions that should use `ε`;
+- empty productions that should use `@empty`;
 - invalid or non-positive weights;
 - malformed `@` references;
 - references to undefined rules;

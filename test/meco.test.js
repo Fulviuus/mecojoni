@@ -231,7 +231,7 @@ test("varied selection does not immediately reuse a rule production", () => {
   }
 });
 
-test("varied selection preserves author weights for optional epsilon rules", () => {
+test("varied selection preserves author weights for optional empty rules", () => {
   const grammar = compile(`@meco 1
 @start sentence
 
@@ -239,7 +239,7 @@ test("varied selection preserves author weights for optional epsilon rules", () 
 - Hello@optional.
 
 # optional
-- [9] ε
+- [9] @empty
 - [1] @suffix
 
 # suffix
@@ -255,6 +255,54 @@ test("varied selection preserves author weights for optional epsilon rules", () 
   }
 
   assert.ok(included > 100 && included < 300, `unexpected optional count: ${included}`);
+});
+
+test("supports the @empty built-in and the legacy epsilon alias", () => {
+  const grammar = compile(`@meco 1
+@start ascii-empty
+
+# ascii-empty
+- @empty
+
+# legacy-empty
+- ε
+`);
+  const generator = new MecoGenerator(grammar, { selection: "random" });
+
+  assert.equal(generator.generate({ start: "ascii-empty" }).text, "");
+  assert.equal(generator.generate({ start: "legacy-empty" }).text, "");
+});
+
+test("reserves the empty rule name for the @empty built-in", () => {
+  assert.throws(
+    () => compile(`@meco 1
+@start empty
+
+# empty
+- text
+`),
+    (error) => {
+      assert.ok(error instanceof MecoError);
+      assert.match(error.diagnostics.join("\n"), /rule name empty is reserved/);
+      return true;
+    },
+  );
+});
+
+test("empty production diagnostics recommend @empty", () => {
+  assert.throws(
+    () => compile(`@meco 1
+@start sentence
+
+# sentence
+-
+`),
+    (error) => {
+      assert.ok(error instanceof MecoError);
+      assert.match(error.diagnostics.join("\n"), /use @empty for an empty production/);
+      return true;
+    },
+  );
 });
 
 test("the audit reports repeated sentence fragments and their grammar source", () => {
