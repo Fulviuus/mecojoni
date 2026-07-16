@@ -130,6 +130,23 @@ pub struct ArtifactMetadata {
     pub default_entry: Option<String>,
 }
 
+impl ArtifactMetadata {
+    /// Requires development-grade artifact diagnostics.
+    ///
+    /// # Errors
+    ///
+    /// Returns `E_BYTECODE_CAPABILITY` for mapped or stripped artifacts.
+    pub fn require_full_debug(&self) -> MecoResult<()> {
+        if self.debug_profile != ArtifactDebugProfile::Full {
+            return Err(error(
+                DiagnosticCode::BYTECODE_CAPABILITY,
+                "artifact does not retain the requested full debug capability",
+            ));
+        }
+        Ok(())
+    }
+}
+
 /// Encodes a canonical owned `bytecode/0` artifact.
 ///
 /// # Errors

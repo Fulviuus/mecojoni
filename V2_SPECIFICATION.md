@@ -1391,6 +1391,11 @@ using a warm session.
 | Source is the only specification | Normative EBNF/lexical spec and parser-independent fixtures | A second parser can pass the same conformance corpus |
 | Serialized IR and bytecode are experimental; streaming is absent | Keep source authoritative; pass source compilation and artifact decoding through the immutable `lowered-ir/1` invariant boundary | [`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md), semantic golden contracts, and recorded cross-runtime evidence |
 
+Experimental `bytecode/0` now preserves the complete v2 runtime contract,
+including dynamic expressions, bindings, messages, provenance, diverse state,
+snapshots, and replay identity. This implementation fact does not freeze the
+container; milestone B6 remains the compatibility decision.
+
 ## Verification strategy
 
 ### Conformance and parser tests

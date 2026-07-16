@@ -16,6 +16,14 @@ by `ArtifactLimits`, checks the exact experimental runtime fingerprint and
 content hash, reconstructs no source AST, and returns a grammar only after the
 shared lowered verifier succeeds.
 
+Artifact-loaded grammars preserve dynamic weights, guards, typed parameters,
+ordered bindings and captures, complete message requests, source provenance,
+composition audits, diverse sessions, replay receipts, and nonempty
+session/repetition snapshots. The semantic package hash is unchanged, so a
+snapshot created with a source-compiled grammar can continue against the decoded
+artifact. `ArtifactMetadata::require_full_debug` provides a stable capability
+failure for mapped and stripped artifacts.
+
 ```rust
 use mecojoni_core::{
     GenerationRequest, PackageInput, PackageSource, SourceFile, SourceId,
