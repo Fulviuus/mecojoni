@@ -159,6 +159,35 @@ test("a seed reproduces the same sequence", () => {
   assert.deepEqual(firstSequence, secondSequence);
 });
 
+test("does not vary references to the same role within a single sentence", () => {
+  const grammar = compile(`@meco 1
+@start intro
+
+# intro
+- @name walked in. @name looked tired. Everyone greeted @name warmly.
+
+# name
+- Ada
+- Marcus
+- Priya
+`);
+  const generator = new MecoGenerator(grammar, { seed: "consistent-name", selection: "random" });
+
+  for (let index = 0; index < 200; index += 1) {
+    const text = generator.generate().text;
+    const match = text.match(/^(\S+) walked in\. (.+)$/);
+    assert.ok(match);
+    const [firstName, remainder] = match ? [match[1], match[2]] : ["", ""];
+    const expected = `${firstName} walked in. ${firstName} looked tired. Everyone greeted ${firstName} warmly.`;
+    assert.equal(
+      text,
+      expected,
+      `generated: ${JSON.stringify(text)}\nexpected: ${JSON.stringify(expected)}`,
+    );
+    assert.equal(remainder.startsWith(`${firstName} looked tired. `), true);
+  }
+});
+
 test("reports undefined nonterminals with their source line", () => {
   const source = `@meco 1
 @start sentence
