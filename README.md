@@ -3,97 +3,324 @@
 </p>
 
 <p align="center">
-  A readable context-free grammar format for generative dialogue and text.
+  A Markdown-like language for compositional, localized generative text.
 </p>
 
 # Mecojoni
 
-Mecojoni is an experimental language and runtime for writing large generative
-text systems in plain-text `.meco` files. It is intended for games, simulations,
-procedural worlds, interactive fiction, test-data generation, and any project
-that needs more structure than choosing a random line from a list.
+Mecojoni is a readable, typed, modular language for generative dialogue and
+text. It retains the useful core of a weighted context-free grammar—headings
+define rules and list items define alternatives—
+while adding the structure needed for game data, conditions, reuse, localization,
+and reliable long-running generation.
 
-A Mecojoni grammar is a
-[context-free grammar](https://en.wikipedia.org/wiki/Context-free_grammar):
-named rules expand into terminal text or other named rules. Expansions can be
-nested, weighted, optional, and recursive. The runtime validates the complete
-rule graph before generation and can produce deterministic sequences from a
-seed.
+> **Status:** the current source-language and compiled-artifact roadmaps are
+> feature-complete. Representative native/WASM measurements justified freezing
+> the hostile-input-checked `bytecode/1` format and its single-WASM deployment
+> path. The
+> dependency-free core parses and compiles complete packages, executes exact typed
+> `weighted/1` generation, and resolves complete localized messages through a
+> synchronous host formatter in Rust, Deno, and Chrome. Transactional `diverse/1`, span-aware
+> provenance, repetition audits, replay receipts, and versioned session/history
+> snapshots now run across Rust and WASM. The dependency-free `std` authoring CLI,
+> initial editor grammar, committed native/WASM workloads, and frozen compatibility
+> contracts are also executable. The crates remain unpublished pending the owner's
+> distribution version and license choice.
+> The bytecode design and implementation status are tracked in
+> [`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md); recorded evidence lives in
+> [`BENCHMARKS.md`](BENCHMARKS.md).
 
-The format aims to feel like the Markdown of generative text: approachable in a
-text editor, easy to review in source control, and expressive enough to grow
-from a dozen greetings into a large dialogue hierarchy.
+The current Rust API can canonically `encode_artifact`, `decode_artifact`,
+`inspect_artifact`, and `disassemble_artifact`. The hostile-input-checked format
+is frozen as `bytecode/1`; see [`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md) for its
+exact layout and [`COMPATIBILITY.md`](COMPATIBILITY.md) for evolution rules.
 
-> **Project status:** early proof of concept. Format version `1`, the JavaScript
-> API, and the command-line interface may change while the core design is being
-> explored.
+The authoring CLI can compile, inspect, verify, and generate `.mecob` files.
+Deno and browser hosts can inspect or load the same bytes through
+`Mecojoni.inspectArtifact` and `Mecojoni.loadArtifact`; loaded artifacts use the
+ordinary grammar-handle lifecycle and leak telemetry.
 
-## Why Mecojoni?
+`deno task wasm:embedded:build` produces a content-specific WASM whose private
+data segment contains the fully resolved Harbor artifact. `openEmbeddedGrammar()`
+opens it without a content fetch; the generic WASM returns a capability error.
+The Chrome smoke test asserts that the content build requests neither `.meco`
+nor `.mecob` at runtime.
 
-Simple phrase generators tend to choose a complete sentence or replace a few
-placeholders. That works for small datasets, but its seams become obvious when
-characters speak repeatedly. Mecojoni instead models the hierarchy that creates
-a sentence:
+## Design goals
 
-```text
-dialogue
-└── observation
-    ├── observer
-    ├── event
-    │   ├── action
-    │   └── object
-    ├── place
-    └── reaction
+Mecojoni keeps authored text at the centre. The visible output remains easy to
+scan:
+
+```meco
+# greeting
+- Hello, @person!
+- @person, @observation.
 ```
 
-This provides several useful properties:
+The additional syntax is reserved for structure that does not itself emit text:
 
-- **Compositional range:** a modest number of carefully scoped rules can create
-  a large number of distinct derivations.
-- **Semantic structure:** authors can keep actions, objects, causes, and
-  reactions together in compatible subtrees.
-- **Controlled probability:** production weights make common, unusual, and rare
-  outcomes explicit.
-- **Reproducibility:** identical seeds and call sequences generate identical
-  output sequences.
-- **Validation:** broken references and non-terminating reachable rules are
-  rejected before any text is generated.
-- **Repetition resistance:** the default sampler remembers recent structures,
-  openings, endings, and exact lines.
-- **Traceability:** every generated phrase can be traced back to the productions
-  and source lines that created it.
+```meco
+- {mood is tense}
+  {common.name as hero}
+  &arrival <- hero: $hero
+```
 
-Mecojoni deliberately separates two concerns: the grammar defines what may be
-said, while the sampler decides which valid derivation to choose next.
+The braces establish eligibility and data; the final line is the complete
+localized message that will be rendered.
 
-## Requirements
+## Build, test, and deploy
 
-- Node.js 20 or newer
-- No external npm dependencies
+Run all commands below from the repository root. Rust 1.85 with the
+`wasm32-unknown-unknown` target and Deno are required; Chrome or Chromium is
+optional for the browser tests.
 
-Check your Node.js version:
+### Build the generic WASM runtime
+
+The generic build contains the runtime but no application grammar:
 
 ```sh
-node --version
+deno task wasm:build
+cargo +1.85.0 build -p mecojoni-wasm --target wasm32-unknown-unknown --release
 ```
 
-Run the test suite:
+The release artifact is
+`target/wasm32-unknown-unknown/release/mecojoni_wasm.wasm`.
+
+### Run the JavaScript and WASM tests
 
 ```sh
-npm test
+deno task js:check
+deno task wasm:test
+deno task wasm:browser:test
 ```
+
+`wasm:test` runs the Deno integration corpus. `wasm:browser:test` bundles the
+same browser-neutral wrapper and exercises external source and `.mecob` loading
+in headless Chrome when an installed browser is available. The complete Rust,
+`no_std`, WASM, documentation, Deno, and browser release gate is listed in
+[`CONFORMANCE.md`](CONFORMANCE.md).
+
+### Compile a package to `.mecob`
+
+The CLI resolves every import from the root module and writes one canonical,
+fully resolved artifact:
+
+```sh
+cargo +1.85.0 run -p mecojoni-cli -- \
+  compile-artifact path/to/root.meco \
+  --profile full \
+  --write target/content.mecob
+
+cargo +1.85.0 run -p mecojoni-cli -- inspect-artifact target/content.mecob
+cargo +1.85.0 run -p mecojoni-cli -- verify-artifact target/content.mecob
+```
+
+Add `--messages path/to/messages.manifest` when the package emits complete
+localized messages. The exact container is specified in
+[`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md); all artifact commands are documented
+in the [CLI guide](crates/mecojoni-cli/README.md).
+
+### Embed the artifact in one content-specific WASM
+
+Point the WASM build at an already compiled artifact. An absolute path is
+recommended because relative paths are resolved from `crates/mecojoni-wasm`:
+
+```sh
+MECO_EMBEDDED_ARTIFACT=/absolute/path/to/content.mecob \
+CARGO_TARGET_DIR=target/content-wasm \
+cargo +1.85.0 build -p mecojoni-wasm \
+  --target wasm32-unknown-unknown \
+  --release
+```
+
+The content-bearing binary is
+`target/content-wasm/wasm32-unknown-unknown/release/mecojoni_wasm.wasm`.
+After instantiation, call `openEmbeddedGrammar()`; it returns the ordinary
+disposable grammar handle. A generic build instead returns
+`E_BYTECODE_CAPABILITY`.
+
+The repository's ready-made embedded conformance build uses the Harbor fixture:
+
+```sh
+deno task wasm:embedded:test
+deno task wasm:embedded:browser:test
+```
+
+The browser test proves that the content-specific application requests one WASM
+file and no separate `.meco` or `.mecob`. See the
+[WASM crate guide](crates/mecojoni-wasm/README.md) and
+[JavaScript wrapper guide](js/README.md) for ABI ownership and application API
+details.
+
+The syntax in this README is authoritative. `SPECIFICATION.md` must be updated
+with every syntax change; if the documents temporarily disagree, this README wins.
+
+## MCP server
+
+Mecojoni includes an [MCP](https://modelcontextprotocol.io) server that exposes
+the `meco` CLI to MCP-compatible agents. It provides tools for checking,
+generating, tracing, formatting, auditing, and compiling Mecojoni sources and
+artifacts while keeping compiler behavior in the CLI and `mecojoni-core`.
+
+Build the CLI, then run the server with Deno 2.x:
+
+```sh
+cargo +1.85.0 build -p mecojoni-cli --release
+deno run --allow-read --allow-run --allow-env=MECO_BIN,MECO_PROJECT_ROOT \
+  /absolute/path/to/mecojoni/mcp/server.ts
+```
+
+The server restricts source and artifact paths to `MECO_PROJECT_ROOT` (the
+repository root by default). See the [MCP server guide](mcp/README.md) for the
+tool list, configuration examples for common MCP clients, and development
+commands.
 
 ## Quick start
 
-Create a file named `hello.meco`:
+Mecojoni source begins with a small, strict front-matter header. This sample has no
+default entry, so a host must request one of its exported rules explicitly.
 
 ```meco
-@meco 1
-@start greeting
+---
+meco: 1.0
+module: npc
+sampler: diverse/1
 
+types:
+  Mood: [calm, tense]
+
+inputs:
+  playerName: text
+  itemCount: number
+  mood: Mood
+  urgency: number
+  inputValue: number
+
+imports:
+  common: "./common.meco"
+
+exports: [pickup, greeting, warning]
+---
+
+# pickup
+- [3] &pickup-common <- player: $playerName, count: $itemCount
+- [1] {mood is tense}
+  &pickup-alert <-
+    player: $playerName
+    count: $itemCount
+
+# local-intro
+- @{common.name as hero} arrived. $hero looked tired.
+```
+
+`pickup` chooses a complete localized message. The second production is eligible
+only when the `mood` input is `tense`. The argument values are data, not visible
+text; `&pickup-common` or `&pickup-alert` owns the complete rendered result.
+
+Add `entry: pickup` to a package root when it should have a default generation
+target. Mecojoni never guesses a default from the first rule or the order of `exports`.
+
+### Run the language walkthrough
+
+Run the Rust walkthrough to see Mecojoni parse the complete README syntax corpus
+and execute every branch of the host-persisted NPC-memory example. It prints rule
+names, generated text, selected productions, and deterministic work counters:
+
+```sh
+cargo +1.85.0 test -p mecojoni-core --test print_hello_generation -- --nocapture
+```
+
+The corpus is deliberately a parsing walkthrough: it places independent syntax
+examples with different localized-message schemas in one source block. The test
+therefore parses the full corpus and separately runs the executable
+`branching-memory` package for `unmet`, `cautious`, and `trusted` NPC paths.
+
+## Complete example corpus
+
+The following source is the canonical syntax corpus. It intentionally places
+many independent examples in one file so each form can be reviewed in context.
+
+```meco
+---
+meco: 1.0
+module: npc
+sampler: diverse/1
+
+types:
+  Mood: [calm, tense]
+
+inputs:
+  playerName: text
+  itemCount: number
+  mood: Mood
+  urgency: number
+
+imports:
+  common: "./common.meco"
+
+exports: [pickup, greeting, warning]
+---
+
+<!-- No entry is declared: a caller must select an exported rule. -->
+
+<!-- Arguments after <- supply data; they are not visible output themselves. -->
+# pickup
+- [3] &pickup-common <- player: $playerName, count: $itemCount
+- [1] {mood is tense}
+  &pickup-alert <-
+    player: $playerName
+    count: $itemCount
+
+<!-- An emitting capture selects once, emits once, then makes $hero reusable. -->
+# local-intro
+- @{common.name as hero} arrived. $hero looked tired.
+
+<!-- Braced clauses are silent. Guards come before bindings. -->
+# localized-arrival
+- {common.name as hero}
+  &arrival <- hero: $hero
+
+# localized-encounter
+- {common.name as hero}
+  {common.name as companion}
+  {common.place as destination}
+  &encounter <- $hero, $companion, $destination
+
+# title-suffix
+- [3] ""
+- [1] " the "@common.title
+
+# multiline-example
+- |
+  First line.
+  Second line.
+
+# tense-arrival
+- [1] {mood is tense}
+  {common.name as hero}
+  &arrival <- $hero
+
+# tense-arrival-with-companion
+- [1] {mood is tense}
+  {common.name as hero}
+  {common.name as companion}
+  &arrival <- hero: $hero, $companion
+
+<!-- Basic composition and public rules. -->
 # greeting
 - [3] @salutation, @person!
 - [1] @person, @observation.
+
+<!-- The header declares a parameter; <- at the call site supplies it. -->
+# greetings <- name: text
+- Hello, $name!
+- Welcome back, $name!
+
+# player-greeting
+- @greetings <- name: $playerName
+
+# warning
+- Attention, @person: @observation.
 
 # salutation
 - Hello
@@ -109,35 +336,8 @@ Create a file named `hello.meco`:
 - the weather has changed
 - the market is unusually quiet
 - today feels promising
-```
 
-Generate five phrases:
-
-```sh
-node src/cli.js hello.meco --count 5
-```
-
-Generate the same sequence again whenever you use the same seed:
-
-```sh
-node src/cli.js hello.meco --count 5 --seed demo-world
-```
-
-Inspect the derivation behind each result:
-
-```sh
-node src/cli.js hello.meco --count 2 --seed demo-world --trace
-```
-
-## The `.meco` format
-
-Every format-version-1 file needs a version directive, a start directive, and
-at least one rule:
-
-```meco
-@meco 1
-@start sentence
-
+<!-- A minimal subject-predicate grammar. -->
 # sentence
 - @subject @predicate.
 
@@ -148,41 +348,14 @@ at least one rule:
 # predicate
 - is waiting
 - found the missing tool
-```
 
-Generation begins at `@start`. The chosen production is expanded from left to
-right. Every referenced nonterminal is recursively expanded until only terminal
-text remains.
-
-### Directives
-
-| Syntax | Meaning |
-| --- | --- |
-| `@meco 1` | Declares the file-format version. Version `1` is currently supported. |
-| `@start rule-name` | Declares the default rule used for generation. |
-
-Each directive must appear exactly once.
-
-### Rules and productions
-
-A heading defines a nonterminal. Each list item beneath it defines one possible
-production:
-
-```meco
+<!-- Ordinary unweighted alternatives. -->
 # temperature
 - cold
 - mild
 - uncomfortably warm
-```
 
-Rule names must begin with an ASCII letter and may then contain letters,
-numbers, hyphens, or underscores. Names are case-sensitive.
-
-### References
-
-Use `@name` to expand another rule:
-
-```meco
+<!-- References embedded in terminal text. -->
 # report
 - The @device is @condition.
 
@@ -193,38 +366,34 @@ Use `@name` to expand another rule:
 # condition
 - offline
 - making a strange noise
-```
 
-References can appear anywhere in a production and may be adjacent to terminal
-text or other references.
-
-### Weights
-
-Place a positive number in square brackets at the beginning of a production to
-give it a relative weight. An omitted weight is `1`:
-
-```meco
-# mood
+<!-- Integer and decimal relative weights. An omitted weight is 1. -->
+# weighted-mood
 - [6] calm
 - [3] tired
 - [1] furious
-```
+- [0.5] cautiously optimistic
 
-Under independent `random` selection, the example above chooses `calm` about
-60% of the time, `tired` about 30%, and `furious` about 10%. Weights do not need
-to add up to any particular total, and decimal weights are valid.
+<!-- Dynamic weights use bare numeric names and are evaluated before selection. -->
+# urgency-reaction
+- [urgency] The alarm is spreading.
+- [weight = urgency, id = urgent-alarm] The alarm is spreading quickly.
+- [1] Everything is quiet.
 
-### Empty productions and optional text
+<!-- Compact expressions, ID-only metadata, and full metadata may be mixed. -->
+# weighted-by-context <- parameterValue: number
+- [weight = inputValue + parameterValue * 20] explicit expression
+- [inputValue + parameterValue * 20] compact expression
+- [id = stable-default] default weight with a stable ID
+- [weight = 3, id = static-three] static weight with a stable ID
 
-The ASCII built-in `@empty` represents an empty production:
-
-```meco
-# greeting
-- Welcome, @name@title-option.
+<!-- Empty output, optional text, and an explicitly delimited adjacent reference. -->
+# titled-greeting
+- Welcome, @{name}@title-option.
 
 # title-option
-- [3] @empty
-- [1]  the @title
+- [3] ""
+- [1] " the "@title
 
 # name
 - Ada
@@ -233,21 +402,16 @@ The ASCII built-in `@empty` represents an empty production:
 # title
 - Captain
 - Doctor
-```
 
-`@empty` is deliberately easy to type, search for, and recognize in any editor.
-The conventional mathematical symbol `ε` remains accepted as a compatibility
-alias, but authors never need to type it.
+<!-- A delimited reference separates the rule name from a literal suffix. -->
+# creature-count
+- Several @{creature}s arrived.
 
-Rules containing an empty production are probability-sensitive. The varied
-sampler preserves their author-defined weights instead of applying cooldown or
-diversity boosts. The rule name `empty` is reserved for this built-in.
+# creature
+- traveller
+- maintenance drone
 
-### Recursion
-
-Rules may reference themselves directly or indirectly:
-
-```meco
+<!-- Productive recursion with a strongly preferred terminating production. -->
 # inventory
 - [5] @item
 - [1] @item, @inventory
@@ -256,60 +420,519 @@ Rules may reference themselves directly or indirectly:
 - a coil of wire
 - a repair kit
 - an empty canister
+
+# calm-line
+- Everything is under control.
+
+<!-- Escape a sigil when it should be emitted literally. -->
+# contact
+- Send a message to pilot\@example.invalid.
+
+<!-- A raw string does not interpret sigils or escape sequences. -->
+# raw-contact
+- r"Send a message to pilot@example.invalid."
+
+<!-- A raw block keeps every sigil as literal text and strips its final newline. -->
+# raw-sigils
+- |raw-
+  @person, $playerName, and &pickup-alert are literal text.
+
+<!-- Split incompatible concepts into semantically coherent branches. -->
+# incident
+- @repair-incident
+- @travel-incident
+
+# repair-incident
+- @technician @repair-action @broken-device.
+
+# travel-incident
+- @traveller @travel-action @destination.
+
+# technician
+- The mechanic
+- A service drone
+
+# repair-action
+- inspected
+- repaired
+
+# broken-device
+- the air recycler
+- the navigation console
+
+# traveller
+- The courier
+- A survey team
+
+# travel-action
+- departed for
+- finally reached
+
+# destination
+- the northern outpost
+- the orbital terminal
 ```
 
-Every reachable recursive cycle must have a path that eventually produces only
-terminal text. Recursive rule weights should strongly favour termination.
-Mecojoni preserves those weights and enforces generation depth and expansion
-limits as a final safety net.
+## The `.meco` format
 
-### Comments
+`.meco` is the canonical source extension used by repository fixtures,
+imports, examples, editor integration, and generated documentation. The portable
+parser still consumes host-supplied source independently of its filename.
 
-Lines whose first non-whitespace characters are `//` are ignored. Inline
-comments are not currently supported.
+### Front matter, modules, and entries
+
+Every module declares `meco: 1.0` and a `module` name. The header is a strict
+Mecojoni schema, not general-purpose YAML: unknown or duplicate fields are
+errors, as are YAML tags, anchors, aliases, merges, and implicit values.
+
+The root may additionally declare:
+
+| Field | Purpose |
+| --- | --- |
+| `entry` | Optional default public rule for generation requests that do not name one. |
+| `sampler` | Optional authoring recommendation such as `diverse/1`. |
+| `types` | Named finite types, for example `Mood: [calm, tense]`. |
+| `inputs` | Typed data supplied by the host. |
+| `imports` | Module paths mapped to aliases. |
+| `exports` | The rules that callers may select. |
+
+Rules are private unless exported. Imported references use their alias:
 
 ```meco
-// Dialogue used during calm conditions.
+imports:
+  common: "./common.meco"
+
+# line
+- @common.name arrived.
+```
+
+### Rules, references, and visible text
+
+A `# heading` defines a rule and each `-` item is a weighted alternative. Rule
+references expand inline and emit their result:
+
+Initial identifiers are case-sensitive ASCII; terminal text may contain any
+valid UTF-8. Unicode identifiers are deferred so the portable core does not carry
+normalization tables before a real authoring requirement justifies them.
+
+```meco
+# report
+- The @device is @condition.
+```
+
+Use `@{name}` when a suffix would otherwise make the reference ambiguous:
+
+```meco
+- Several @{creature}s arrived.
+```
+
+Use an emitting capture when the selected output must be reused later in the same
+production:
+
+```meco
+- @{common.name as hero} arrived. $hero looked tired.
+```
+
+The capture selects `common.name` once, emits it once, and binds that same value
+as `$hero`. Captures are local to their production and candidate; nested rules
+receive values only through declared parameters.
+
+### Silent clauses: guards and bindings
+
+Leading braces describe work that does not itself produce visible text:
+
+```meco
+- {mood is tense}
+  {common.name as hero}
+  &arrival <- $hero
+```
+
+`{mood is tense}` is a guard. It determines whether the production is eligible.
+`{common.name as hero}` is a binding. It expands a rule once and stores the value
+without emitting it. Guards must come before bindings: eligibility is decided
+before the runtime selects a production and evaluates its bindings.
+
+A later binding may call a parameterized rule with values from earlier bindings:
+
+```meco
+- {common.name as hero}
+  {common.companion <- owner: $hero as companion}
+  $hero arrived with $companion.
+```
+
+The `as companion` suffix names the silent result; the arguments between `<-`
+and `as` follow the same named and punned rules as an emitting call.
+
+The first non-braced item is the visible body. This is why a normal textual body
+does not need a separator:
+
+```meco
+- {mood is tense}
+  {common.name as hero}
+  $hero, I see you are with your companion.
+```
+
+### Typed rule parameters and calls
+
+Rule headers declare typed parameters with `<-`:
+
+```meco
+# greetings <- name: text
+- Hello, $name!
+
+# player-greeting
+- @greetings <- name: $playerName
+```
+
+The value after `<-` is an argument list, not output. The call expands
+`greetings`, passing the host input as its `name` parameter, then emits the chosen
+rule result. The same syntax calls a localized message:
+
+```meco
+&arrival <- hero: $hero, companion: $companion
+```
+
+Within an argument list, `$hero` is shorthand for `hero: $hero`. Therefore:
+
+```meco
+&encounter <- $hero, $companion, $destination
+```
+
+means:
+
+```meco
+&encounter <- hero: $hero, companion: $companion, destination: $destination
+```
+
+`<-` is only a call-argument operator after `@rule` or `&message`; it is never a
+general assignment form.
+
+### Branching and persistent NPC memory
+
+Rule calls form a branching content graph. During one generation, Mecojoni follows
+the selected branch and any rules it calls, so a response can continue into a
+reusable sub-path:
+
+```meco
+# encounter
+- {npcPath is cautious} @cautious-encounter
+- {npcPath is trusted} @trusted-encounter
+
+# cautious-encounter
+- "Keep your voice down. "@cautious-decision
+
+# cautious-decision
+- I will show you the way.
+- We should wait for daylight.
+
+# trusted-encounter
+- "Good to see you again. "@trusted-decision
+
+# trusted-decision
+- Let us start with the old signal tower.
+- I saved something for you.
+```
+
+This traversal is local to that generation. Mecojoni does not mutate a character
+or story variable after returning a result. Persistent NPC memory belongs to the
+host application: store the character's state there, then provide it as a typed
+input on the next generation.
+
+```meco
+types:
+  NpcPath: [unmet, cautious, trusted]
+
+inputs:
+  npcPath: NpcPath
+```
+
+For example, the host can begin with `npcPath = unmet`, update its saved NPC record
+to `cautious` after a player action, and pass `npcPath = cautious` on the next call.
+Guards then select the appropriate branch. This keeps saves, quest logic, and
+multiplayer authority in the host while keeping the grammar deterministic for a
+given input and seed.
+
+`diverse/1` is separate from narrative memory: it remembers recent selections and
+text only to avoid repetition. It does not decide or persist an NPC's story path.
+
+### Complete localized messages
+
+`&message` resolves a stable external message through the configured formatter.
+It must be the complete visible body of a production, rather than a fragment
+inside English prose. This lets each locale control word order, agreement,
+plurality, and inflection.
+
+```meco
+- {common.name as hero}
+  &arrival <- $hero
+```
+
+The binding contributes data but no text. The formatter owns the rendered result.
+A message-valued rule cannot be captured, suffixed, or wrapped in another visible
+rule fragment.
+
+Compilation receives a formatter manifest, so missing IDs, missing or extra
+arguments, and type drift fail before generation. A generated message crosses the
+host boundary as one ordered request containing its stable ID, typed values,
+requested locale, and explicit fallback chain. The formatter returns the complete
+text plus actual locale, environment identity, diagnostics, deterministic work
+units, and whether the result is replayable. It is synchronous and operates only
+over resources the host has already loaded; the core performs no locale I/O and
+contains no built-in plural engine.
+
+A filesystem-backed Rust integration test proves this generic boundary against
+the real `fluent-bundle` crate. Its `.meco` package passes text, exact integral
+number, and enum arguments into English and Italian `.ftl` resources; Fluent then
+selects grammatical gender and the `one` and `other` cardinal categories. The
+same test checks ordered locale fallback, formatter provenance,
+and Fluent's default bidirectional-isolation marks. `fluent-bundle` is strictly a
+test-only dependency, so the production core remains dependency-free and
+`#![no_std] + alloc`:
+
+```sh
+cargo test -p mecojoni-core --test fluent_integration
+```
+
+See the [test adapter](crates/mecojoni-core/tests/fluent_integration.rs) and its
+[Meco/Fluent fixtures](crates/mecojoni-core/tests/fixtures/packages/fluent/) for
+the complete executable example. This validates how a standards-based adapter
+fits the interface; a reusable production Fluent adapter package remains a
+separate deferred deliverable.
+
+The Rust API exposes `compile_package_with_manifest`,
+`generate_weighted_structural`, and `generate_weighted_with_formatter`. The
+browser-neutral TypeScript wrapper accepts the same contract:
+
+```ts
+const compiled = meco.compilePackage(packageDescription, {
+  messages: [{
+    id: "arrival",
+    arguments: [
+      { name: "hero", type: { kind: "text" } },
+      { name: "count", type: { kind: "number" } },
+    ],
+  }],
+});
+if (!compiled.ok) throw new Error(compiled.error.message);
+
+const result = meco.generateWeighted(compiled.value, {
+  seed: 7n,
+  locale: "pl",
+  fallbackLocales: ["en"],
+  data: { itemCount: { kind: "number", numerator: 2n, denominator: 1n } },
+  formatter: (request) => formatFromPreloadedCatalog(request),
+});
+```
+
+See [`js/README.md`](js/README.md) and
+[`INTERFACES.md`](INTERFACES.md) for the concrete callback and wire
+contracts.
+
+### Weights, empty output, and recursion
+
+Static weights are positive relative base weights. Omitted weights are `1`, and
+decimals are valid:
+
+```meco
+# mood
+- [6] calm
+- [3] tired
+- [1] furious
+- [0.5] cautiously optimistic
+```
+
+A dynamic weight may use an immutable numeric input or a numeric parameter of the
+current rule. It is evaluated after guards but before selection; zero makes that
+production ineligible. Use the bare value name inside weight metadata—`urgency`,
+not `$urgency`:
+
+```meco
+inputs:
+  urgency: number
+
+# reaction
+- [urgency] The alarm is spreading.
+- [1] Everything is quiet.
+```
+
+`[urgency]` is shorthand for `[weight = urgency]`. Use the long form when the
+production also needs a stable authored identity:
+
+```meco
+- [weight = urgency, id = urgent-alarm] The alarm is spreading.
+```
+
+All supported metadata forms are:
+
+```meco
+- [weight = inputValue + parameterValue * 20] explicit expression
+- [inputValue + parameterValue * 20] compact expression
+- [id = stable-default] default weight (`1`) with a stable ID
+- [weight = 3, id = static-three] explicit weight with a stable ID
+```
+
+The same expression works with a declared rule parameter, such as
+`# reaction <- urgency: number`. Expressions may use decimal literals, numeric
+inputs/parameters, parentheses, `+`, `-`, and `*`; they cannot use captures,
+bindings, generated rules, messages, callbacks, clocks, or ambient state. A
+negative or overflowing evaluated value is a generation error, and if every
+guard-eligible production evaluates to zero, generation returns
+`E_NO_ELIGIBLE_PRODUCTION`. This keeps dynamic selection deterministic and
+replayable.
+
+Version `rational/1` evaluates those values exactly as reduced signed fractions:
+the absolute numerator and positive denominator are each at most `2^63 - 1`.
+Decimal literals contain at most 18 digits and an optional exponent from `-18` to
+`18`; an operation or per-rule scaled total outside the budget is an error rather
+than a floating-point approximation. Version `splitmix64/1` supplies the seeded
+random stream, whose fixed vectors are shared by Rust and the Deno/WASM wrapper.
+
+An entire production containing `""` emits nothing:
+
+```meco
+# title-suffix
+- [3] ""
+- [1] " the "@title
+```
+
+Recursive rules are valid only when there is a productive route back to terminal
+text. Terminating alternatives should normally carry most of the weight:
+
+```meco
+# inventory
+- [5] @item
+- [1] @item, @inventory
+```
+
+### Whitespace, strings, blocks, comments, and escapes
+
+Visible text preserves its authored characters. Put intentional leading or
+trailing whitespace inside a quoted segment:
+
+```meco
+- " the "@title
+```
+
+Double-quoted segments interpret escapes. `r"..."` is a raw single-line literal;
+`|raw`, `|raw-`, and `|raw+` are raw block forms. `|` retains one final newline,
+`|-` removes it, and `|+` preserves trailing blank lines.
+
+```meco
+- Send a message to pilot\@example.invalid.
+- r"Send a message to pilot@example.invalid."
+- |raw-
+  @person and $playerName are literal text here.
+```
+
+Outside literals, Markdown comments are ignored:
+
+```meco
+<!-- This production is for calm conditions. -->
 # calm-line
 - Everything is under control.
 ```
 
-### Literal `@` characters
+## Sampling and reproducibility
 
-Because `@` begins a rule reference, write `@@` to emit one literal `@`:
+Mecojoni exposes two runtime modes: independent `random` and repetition-resistant
+`varied`. Mecojoni makes the policy names and versions explicit:
 
-```meco
-# contact
-- Send a message to pilot@@example.invalid.
+| Mecojoni policy | Corresponding behavior | Use |
+| --- | --- | --- |
+| `weighted/1` | `random` | Exact independent weighted CFG draws. |
+| `diverse/1` | `varied` | Stateful repetition resistance for player-facing text. |
+
+Under `weighted/1`, weights are exact relative probabilities. Under `diverse/1`,
+they remain authorial priors but may be adjusted by bounded structural cooldown,
+subtree diversity, candidate search, and surface-novelty scoring. Nullable and
+recursion-sensitive rules retain their termination and optionality weights.
+
+`sampler: diverse/1` is a recommendation stored with the grammar, not an
+unchangeable semantic property. A host may explicitly override it. The effective
+sampler version, settings, grammar hash, seed, input, locale, and requested entry
+must be recorded for reproducible sessions.
+
+The initial `diverse/1` profile, `location/1`, uses 12 candidate attempts, an
+immediate-reuse gap of one selection, a four-selection soft cooldown horizon,
+3–8 word edge fragments, 300 retained edge records, and 50,000 retained exact
+records. The edge and exact histories also have 4 MiB and 16 MiB canonical UTF-8
+logical-byte caps. These are versioned profile values, not hidden tuning constants.
+The default resource profile preserves a depth limit of 80 and expansion limit
+of 2,000 per candidate while also bounding output, sampling work, and rendered bytes.
+The complete profile and limit tables are normative in
+[SPECIFICATION.md](SPECIFICATION.md).
+
+The executable API keeps mutable state explicit. `SamplerSession` owns the parent
+PRNG and call order; `RepetitionStore` owns structural, exact-output, and edge
+histories and may be shared deliberately. `DiverseGenerationRequest` contains no
+seed because the session is the sole random source. Each successful `location/1`
+call reserves 12 substream seeds, commits one winner and one store revision, and
+reports its attempt and novelty score. Any failure leaves both objects unchanged.
+
+```rust
+let mut session = SamplerSession::new(42);
+let mut repetition = RepetitionStore::new_location();
+let result = session.generate(
+    &grammar,
+    &mut repetition,
+    &DiverseGenerationRequest::default(),
+)?;
 ```
 
-## Thinking in context-free grammars
+Successful diverse results include a `ReplayReceipt` containing grammar and state
+hashes, the request digest, fixed PRNG reservation, stable derivation hash, winner,
+final-text hash, and post-commit revision. `SamplerSession::snapshot()` and
+`RepetitionStore::snapshot()` capture the pre-call continuation; restoring both
+after nonempty history reproduces the next result. In-memory repetition snapshots
+share an immutable copy-on-write root. Serialized snapshots use `snapshot/1`, are
+bounded to 64 MiB at the decoder, and validate their profile windows and logical
+byte declarations before allocating live state.
 
-In grammar terminology:
+Repetition snapshots contain resolved lines and fragments and must therefore be
+treated as sensitive data. `SnapshotPolicy` makes capture consent, logical budget,
+pinning, and revision-relative expiry explicit. A pin is ordinary caller ownership:
+dropping the snapshot releases it, so the core never grows an ambient retention
+registry. Durable storage and encryption remain host responsibilities.
 
-- a `# rule` is a **nonterminal**;
-- a `- production` is one possible replacement for that nonterminal;
-- literal text is a **terminal**;
-- `@start` identifies the start symbol;
-- generation produces a derivation from the start symbol to terminal text.
+Production identities are not list positions. An explicit `id` remains stable
+across weight, order, and prose edits; otherwise the compiler derives a content-
+addressed artifact-local ID from the qualified rule and canonical body, excluding
+weight. Duplicate unlabeled alternatives and all within-rule ID collisions are
+compile errors.
 
-For example, this rule:
+## Compilation, generation, and diagnostics
 
-```meco
-# sentence
-- @actor @action @object.
-```
+The proposed compiler validates source before any generation. Its checks include:
 
-corresponds conceptually to:
+- front-matter shape, module identity, imports, exports, and visibility;
+- duplicate or undefined rules, invalid references, parameters, and call arguments;
+- input and parameter types, guard expressions, duplicate bindings, shadowing,
+  forward references, and unused bindings;
+- message-effect placement: a localized message must own the complete visible body;
+- productive reachable rules, nullable paths, recursive components, and risk;
+- weights, strings, escapes, comments, blocks, and source spans.
 
-```text
-sentence → actor action object "."
-```
+Generation uses an explicit expansion stack and configured limits rather than the
+host language call stack. Failed, losing, cancelled, or over-budget diverse
+candidates roll back their bindings and sampler state. Successful generations can
+return a trace that identifies selected rules, production identities, binding
+events, source locations, sampler adjustments, and formatter/message work.
+With `trace_provenance`, every visible byte/scalar range is linked to authored
+text, host or bound values, emitting captures, or a coarse complete message.
+Non-emitting bindings retain derivation links but no output range. Structural and
+rendered repetition audits operate on these retained traces; rendered findings
+attribute a fragment only to nodes whose output ranges overlap it.
 
-The most important authoring decision is not how many combinations a grammar
-has, but whether each combination makes sense. A completely unrestricted
-`actor × action × object` product can be enormous and still produce weak prose.
-Prefer semantic branches whose members share a contract:
+`composition/1` is an optional, deliberately strict audit heuristic. It warns
+when a sentence-ending locally composed production has fewer than three direct
+emitting grammar references or an authored literal run longer than two words.
+Complete `&message` bodies are exempt because their structure belongs to the
+formatter. It is a signal for review, never a prose-quality verdict.
+
+## Authoring guidance
+
+The number of possible outputs is less important than whether each combination
+makes sense. Organize a grammar around semantic contracts:
 
 ```meco
 # incident
@@ -323,323 +946,138 @@ Prefer semantic branches whose members share a contract:
 - @traveller @travel-action @destination.
 ```
 
-Here, repair actions can only receive repair-compatible objects, while travel
-actions can only receive destinations. Variation remains large without
-sacrificing coherence.
+This prevents repair actions from being combined with travel destinations merely
+because both were placed in global pools. Use weights for intentional world
+texture, keep recursion termination-biased, and use localized messages when the
+sentence must adapt to locale-specific grammar.
 
-## Selection modes
+## Authoring CLI and editor grammar
 
-Mecojoni supports two sampling modes.
-
-| Mode | Behavior | Best suited for |
-| --- | --- | --- |
-| `varied` | Stateful, repetition-resistant selection; the default | NPC dialogue and repeated player-facing text |
-| `random` | Independent weighted CFG sampling with no novelty memory | Probability testing and applications that require unmodified draws |
-
-Choose a mode on the command line:
+The optional `mecojoni-cli` crate provides `check`, `generate`, `trace`, `lint`,
+`audit`, `manifest`, `fmt`, and `bench`. It recursively resolves imports
+from an explicit root while the portable core continues to perform no I/O.
 
 ```sh
-node src/cli.js dialogue.meco --count 100 --selection varied
-node src/cli.js dialogue.meco --count 100 --selection random
+cargo +1.85.0 run -p mecojoni-cli -- check npc.meco
+cargo +1.85.0 run -p mecojoni-cli -- \
+  generate npc.meco --seed 7 --data playerName=Rin
+cargo +1.85.0 run -p mecojoni-cli -- lint npc.meco --deny-warnings
 ```
 
-### How varied selection works
+Human output and `cli/1` JSONL have fixed stdout/stderr and exit-status contracts.
+Generation batches are buffered before output, so errors never leave partial
+success records. The initial formatter validates then preserves source byte for
+byte; this proves comments, edge spaces, and block chomp semantics cannot change
+while style-changing rules remain deliberately unspecified. Full CLI details are
+in [the CLI guide](crates/mecojoni-cli/README.md).
 
-The varied sampler combines three mechanisms:
+[`editors/vscode/`](editors/vscode/README.md) supplies an initial TextMate grammar
+and language configuration. Semantic diagnostics use `meco check`; an LSP
+transport is deferred until real editor synchronization requirements justify it.
 
-1. **Structural cooldown:** recently selected structural productions receive a
-   temporary penalty, with immediate reuse normally prevented.
-2. **Subtree diversity:** productions leading to more distinct derivations can
-   receive a bounded boost so large branches are not hidden behind one small
-   parent choice.
-3. **Output novelty:** the runtime can consider up to 12 candidate derivations
-   and prefer the one whose visible opening and ending fragments were used least
-   recently.
+## Tooling and implementation
 
-By default, visible 3–8 word openings and endings are remembered across the
-previous 300 generated phrases. Two-word fragments are also tracked at internal
-sentence boundaries. Exact normalized lines are remembered across the previous
-50,000 phrases.
+The primary implementation is Rust. Its core is `#![no_std]` plus `alloc`,
+with no filesystem, network, clock, thread-runtime, environment, or operating-system
+randomness assumptions. Hosts provide source modules, seeds, data, formatter
+results, and persistence explicitly. The core has no external dependencies and
+forbids unsafe code; the WASM adapter isolates the target allocator.
 
-Recursive rules and rules containing `@empty` are exempt from structural
-cooldowns and diversity boosts, because their weights commonly control
-termination and optionality.
+JavaScript support targets `wasm32-unknown-unknown` through a dependency-light,
+handwritten linear-memory ABI and JavaScript/TypeScript wrapper for Deno and
+browsers. The WASM adapter supplies its global allocator. A C API is not part of
+the initial scope.
 
-Novelty state belongs to a `MecoGenerator` instance. Reuse one generator for a
-dialogue pool when nearby NPCs should avoid each other's recent phrasing. If
-every NPC receives a separate generator, each NPC receives separate repetition
-memory.
+The implementation provides a parser with precise spans, an immutable compiled
+representation, typed Rust APIs, deterministic seeded sessions, structured
+errors, traces, corpus audits, and a formatter boundary. An LSP transport remains
+deferred until editor synchronization requirements are known. The runtime
+separates immutable grammar content from mutable sampler history so nearby NPCs
+can share repetition memory without making every generator globally stateful.
 
-## Command-line interface
+The production core remains `no_std + alloc`, while unit-test harnesses and
+integration tests may use `std`. Integration tests load checked-in `.meco`
+packages from the filesystem, exercise real imports, and compare exact diagnostics
+and deterministic seeded results. Deno and browser harnesses test the compiled
+WASM interface.
 
-```text
-Usage: meco <grammar.meco> [options]
-```
-
-| Option | Description |
-| --- | --- |
-| `-n, --count <number>` | Number of phrases to generate. Default: `1`. |
-| `--seed <value>` | Seeds the deterministic pseudorandom sequence. |
-| `--start <rule>` | Generates from a named rule instead of the file's `@start`. |
-| `--selection <mode>` | Selects `varied` or `random`. Default: `varied`. |
-| `--audit <samples>` | Audits exact lines and repeated opening/ending fragments. |
-| `--audit-composition` | Audits sentence productions for large fixed literal shells. |
-| `--trace` | Prints selected productions and source lines to standard error. |
-| `-h, --help` | Prints command help. |
-
-### Alternative start rules
-
-A grammar can expose multiple useful entry points even though only one is the
-default:
-
-```sh
-node src/cli.js dialogue.meco --start greeting --count 10
-node src/cli.js dialogue.meco --start warning --count 10
-```
-
-### Seeds
-
-Seeds are strings. Reproducibility depends on all of the following remaining
-the same:
-
-- grammar contents;
-- seed;
-- selection mode and generator options;
-- requested start rules;
-- number and order of previous calls on that generator.
-
-Changing any one of them may change the sequence.
-
-### Derivation traces
-
-`--trace` leaves generated text on standard output and prints a tree-shaped
-derivation trace to standard error. Each trace entry includes the rule name,
-one-based production number, source line, and expansion depth. The trace header
-also reports the number of candidate attempts used by novelty selection.
-
-This is useful when a sentence is awkward and you need to identify the exact
-branch that assembled it.
-
-## JavaScript API
-
-Mecojoni currently exposes ES modules directly from `src/`.
-
-### Compile once, generate many times
-
-```js
-import { readFile } from "node:fs/promises";
-import { compile, MecoGenerator } from "./src/meco.js";
-
-const source = await readFile("dialogue.meco", "utf8");
-const grammar = compile(source, { filename: "dialogue.meco" });
-
-const generator = new MecoGenerator(grammar, {
-  seed: "world-1042",
-  selection: "varied",
-});
-
-for (let index = 0; index < 10; index += 1) {
-  const result = generator.generate();
-  console.log(result.text);
-}
-```
-
-`compile()` parses and validates source text into an in-memory grammar. It does
-not currently write a compiled artifact to disk. Applications should compile a
-grammar once during loading and reuse the compiled object.
-
-### Generate from a different rule
-
-```js
-const result = generator.generate({ start: "warning" });
-
-console.log(result.text);
-console.log(result.noveltyAttempts);
-console.log(result.noveltyScore);
-console.log(result.trace);
-```
-
-### Generator options
-
-| Option | Default | Purpose |
-| --- | ---: | --- |
-| `seed` | `"mecojoni"` | Reproducible random seed. |
-| `selection` | `"varied"` | `varied` or `random`. |
-| `maxDepth` | `80` | Maximum recursive expansion depth. |
-| `maxExpansions` | `2000` | Maximum rule expansions in one candidate. |
-| `noveltyAttempts` | `12` | Maximum candidates considered per varied generation. |
-| `noveltyWindow` | `300` | Number of recent phrases retained for edge fragments. |
-| `exactNoveltyWindow` | `50000` | Number of recent exact lines retained. |
-| `fragmentMinWords` | `3` | Minimum normal edge-fragment length. |
-| `fragmentMaxWords` | `8` | Maximum edge-fragment length. |
-
-Advanced cooldown and diversity parameters are also available in the
-constructor, but they should be treated as experimental implementation details
-until the API stabilizes.
-
-### Handling compilation errors
-
-```js
-import { compile, MecoError } from "./src/meco.js";
-
-try {
-  const grammar = compile(source, { filename: "dialogue.meco" });
-} catch (error) {
-  if (error instanceof MecoError) {
-    console.error(error.message);
-    for (const item of error.diagnostics) console.error(item);
-  } else {
-    throw error;
-  }
-}
-```
-
-Diagnostics include the supplied filename and source line whenever possible.
-
-## Compilation and validation
-
-Before returning a grammar, `compile()` checks:
-
-- missing, duplicate, or unsupported `@meco` declarations;
-- missing or duplicate `@start` declarations;
-- invalid or undefined start rules;
-- invalid and duplicate rule names;
-- productions outside rule sections;
-- empty productions that should use `@empty`;
-- invalid or non-positive weights;
-- malformed `@` references;
-- references to undefined rules;
-- rules without productions;
-- reachable rules that can never finish producing terminal text.
-
-Compilation is currently an in-memory parse and validation step performed each
-time a process loads a `.meco` file. A serialized or binary compiled format is a
-future possibility, but no `.mecoc` format exists yet.
-
-During generation, `maxDepth` and `maxExpansions` protect the host application
-from unexpectedly deep or explosive recursive derivations.
-
-## Auditing a grammar
-
-Tests prove that the runtime behaves as intended; audits help evaluate the
-content of a particular grammar.
-
-### Repetition audit
-
-Generate a large deterministic sample and find repeated complete lines,
-openings, endings, and internal sentence boundaries:
-
-```sh
-node src/cli.js dialogue.meco --audit 25000 --seed audit
-```
-
-The report includes total and unique lines, exact duplicates, novelty retries,
-the most frequent edge fragments, and the derivation step most likely
-responsible for each repeated fragment. Add `--selection random` to audit
-independent weighted sampling.
-
-### Compositionality audit
-
-The optional structural audit identifies sentence-level productions that may
-contain too much fixed prose:
-
-```sh
-node src/cli.js dialogue.meco --audit-composition
-```
-
-For each reachable production ending in sentence punctuation, it expects at
-least three nonterminal references and no terminal run longer than two words.
-This deliberately strict heuristic is useful for finding large fixed sentence
-shells. It is not a general measure of writing quality, and a curated grammar
-may intentionally violate it. Use `--start <rule>` to audit a particular
-subtree.
-
-## Authoring guidance
-
-Large output counts alone do not make dialogue convincing. These practices tend
-to produce better results:
-
-1. **Compose within a concept.** Give each subtree a semantic contract, such as
-   repair events, travel delays, or medical paperwork.
-2. **Vary visible edges.** Repeated openings and endings are noticed much sooner
-   than repeated words in the middle of a sentence.
-3. **Split incompatible categories.** If only some verbs accept some objects,
-   create separate branches instead of one global verb and object pool.
-4. **Use weights for world texture.** Commonplace events should remain common;
-   rare events feel rare only when their probability is intentional.
-5. **Keep reactions contextual.** A reaction that follows any event will
-   eventually follow an event it does not fit.
-6. **Treat recursion carefully.** Always provide a strongly weighted terminating
-   path and test maximum observed output length.
-7. **Audit generated corpora.** Grammar review cannot reveal every interaction
-   between distant branches.
-8. **Use traces to repair the tree.** Fix awkward combinations at the smallest
-   rule that violated its semantic contract.
-
-For procedural games, a practical arrangement is to compile each dialogue
-grammar once, create one generator per repetition domain, and derive stable
-seeds from world identifiers. A location-wide generator shares novelty memory
-between NPCs; an NPC-specific generator isolates each character's sequence.
+The full rationale, semantic contract, validation plan, localization boundary,
+performance constraints, and implementation phases are in
+[SPECIFICATION.md](SPECIFICATION.md).
+The formal lexical and strict front-matter grammar is in
+[SYNTAX.md](SYNTAX.md).
+The host package, WASM ownership/handle, JavaScript error, and CLI stream contracts
+are in [INTERFACES.md](INTERFACES.md).
+The implementation order and completion gates are tracked in
+[ROADMAP.md](ROADMAP.md).
 
 ## Project structure
 
 ```text
-assets/
-  mecojoni-logo.png   Project logo
-src/
-  meco.js             Compiler, generator, seeding, and novelty selection
-  audit.js            Repetition and compositionality audits
-  cli.js              Command-line interface
-test/
-  meco.test.js        Compiler, generator, audit, and regression tests
-package.json          Node.js package metadata and scripts
-README.md             Project documentation
+README.md                    Mecojoni overview and canonical syntax corpus
+SPECIFICATION.md             Detailed specification and implementation plan
+SYNTAX.md                    Normative lexical and complete source grammar
+INTERFACES.md                Package, WASM, JavaScript, and CLI contracts
+ROADMAP.md                   Phased implementation plan and completion gates
+COMPATIBILITY.md             Frozen language/runtime/ABI compatibility policy
+CONFORMANCE.md               Cross-runtime fixture and release test index
+BENCHMARKS.md                Native/WASM workloads and optimization evidence
+RELEASE.md                   Distribution release checklist
+BYTECODE_FORMAT.md           Normative frozen bytecode/1 layout and policy
+BYTECODE_FORMAT_PLAN.md      Completed compiled-artifact and embedding plan
+Cargo.toml                   Rust 2024 workspace (MSRV 1.85)
+crates/
+  mecojoni-benchmarks/       Native operation/allocation workload harness
+  mecojoni-cli/              Optional std authoring CLI
+  mecojoni-core/             Safe, dependency-free no_std + alloc core
+    tests/fixtures/          Filesystem-backed integration corpus
+  mecojoni-wasm/             Handwritten WASM ABI and target allocator
+js/
+  mecojoni.ts                Browser-neutral TypeScript wrapper
+  mecojoni_test.ts           Normative Deno integration suite
+  browser_smoke.*            Same-artifact browser integration harness
+editors/vscode/              TextMate grammar and editor configuration
+examples/                    Checked single- and multi-module examples
+docs/decisions/              Evidence-backed architecture decisions
+assets/                      Mecojoni logo
 ```
-
-## Development
-
-```sh
-npm test
-node src/cli.js --help
-```
-
-The project intentionally has no runtime dependencies. Tests use Node.js's
-built-in test runner and assertion library.
 
 ## Current limitations
 
-Mecojoni version 1 does not yet provide:
-
-- variables or values supplied by a host game;
-- grammatical features such as number, gender, tense, or agreement;
-- conditions, tags, or rule parameters;
-- imports, modules, or namespacing across files;
-- transforms such as capitalization or article selection;
-- persistence of novelty history across process restarts;
-- a serialized compiled grammar artifact;
-- editor tooling or a language server;
-- a stable published npm API.
-
-These are intentional boundaries of the current proof of concept, not promises
-that every item will enter the language unchanged.
-
-## Direction
-
-Likely areas for further exploration include:
-
-- host-supplied context without turning the format into a template engine;
-- typed or feature-aware nonterminals for grammatical agreement;
-- grammar modules and reusable vocabulary packages;
-- a compiled distribution format for game builds;
-- corpus-level quality metrics and interactive derivation inspection;
-- bindings for game engines and other host languages;
-- a formal versioned format specification.
-
-The goal is a small author-facing language that remains readable as its grammar
-becomes deep, while giving runtime systems enough information to generate
-varied, coherent text for a long-lived procedural world.
+The implementation currently provides owned UTF-8 sources, dual byte/scalar
+spans, ordered multi-error diagnostics, complete source parsing including cooked
+block interpolation, immutable multi-module compilation, exact `weighted/1`
+generation, iterative graph analysis/expansion, deterministic work limits,
+versioned profile records, the composition audit, a version-discovery WASM ABI,
+and target-spanning tests. The WASM ABI now includes allocation, package,
+compilation, generation, result-copy, diagnostic, opaque-handle, disposal, and
+lifecycle-counter operations; the dependency-free TypeScript wrapper is tested in
+Deno and Chrome against the same artifact. The executable subset now supports
+static and dynamic exact weights, typed scalar/enum request data, guards, typed
+rule calls, emitting captures, ordered silent bindings, ordinary references, all
+literal/block forms, empty output, public entries, productive recursion, and
+opt-in binding/selection traces with exact evaluated weights.
+Stable external messages, typed message/input manifests, transitive
+complete-message effects, explicit locale fallback, formatter provenance, and
+synchronous Rust/JS formatter boundaries are also executable across the shared
+Rust/Deno/Chrome corpus. Transactional `diverse/1` sessions, hard/soft cooldown,
+bounded exact/edge histories, winner-only commit, and cross-target deterministic
+sequences are executable as well. Stable production IDs, exact output provenance,
+overlap-only structural/rendered audits, copy-on-write snapshots, and replay
+receipts are executable through Rust and the Deno-tested WASM wrapper. The `std`
+CLI, conservative formatter, subprocess contract suite, and initial editor grammar
+are executable as well. Static trace-off weighted rules use
+precomputed cumulative indexes, and production-ID collision checks are
+`O(n log n)`; both optimizations have committed native/WASM evidence. A production
+Fluent adapter and compound value records are explicitly deferred extensions, not
+unimplemented release promises. The generic boundary is nevertheless exercised
+against real Fluent resources by a Rust-only dev-dependency integration test. See
+[COMPATIBILITY.md](COMPATIBILITY.md),
+[CONFORMANCE.md](CONFORMANCE.md), [RELEASE.md](RELEASE.md), the frozen
+[bytecode format](BYTECODE_FORMAT.md), and its completed
+[implementation plan](BYTECODE_FORMAT_PLAN.md).
 
 ## Name
 
-“Mecojoni” is Roman slang loosely conveying “wow.” The name is unrelated to the
-grammar model; it was chosen because it is memorable and fun to say.
+“Mecojoni” is Roman slang loosely conveying “wow.” It was chosen because it is
+memorable and fun to say.

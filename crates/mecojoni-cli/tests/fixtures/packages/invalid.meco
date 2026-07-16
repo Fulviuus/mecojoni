@@ -1,0 +1,9 @@
+---
+meco: 1.0
+module: broken
+entry: line
+exports: [line]
+---
+
+# line
+- @missing

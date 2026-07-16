@@ -1,0 +1,8 @@
+---
+meco: 1.0
+module: npc
+yaml: forbidden
+---
+
+# greeting
+- Hello.

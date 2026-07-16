@@ -1,0 +1,17 @@
+---
+meco: 1.0
+module: metadata
+entry: start
+inputs:
+  inputValue: number
+exports: [start]
+---
+
+# start
+- @choice <- parameterValue: 2
+
+# choice <- parameterValue: number
+- [weight = inputValue + parameterValue * 20, id = explicit] explicit
+- [inputValue + parameterValue * 20] compact
+- [id = stable-default] default
+- [weight = 3, id = static-three] static

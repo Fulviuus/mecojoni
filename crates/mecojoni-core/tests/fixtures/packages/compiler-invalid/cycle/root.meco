@@ -1,0 +1,11 @@
+---
+meco: 1.0
+module: cycle-root
+entry: line
+imports:
+  common: "./common.meco"
+exports: [line]
+---
+
+# line
+- @common.line

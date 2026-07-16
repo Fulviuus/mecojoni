@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom", "dom.iterable", "esnext"],
+    "strict": true
+  },
+  "fmt": {
+    "lineWidth": 100
+  },
+  "tasks": {
+    "wasm:build": "cargo +1.85.0 build -p mecojoni-wasm --target wasm32-unknown-unknown",
+    "wasm:test": "deno task wasm:build && deno test --allow-read js/mecojoni_test.ts js/workloads_test.ts",
+    "wasm:bench": "cargo +1.85.0 build -p mecojoni-wasm --target wasm32-unknown-unknown --release && deno run --allow-read js/workloads_bench.ts",
+    "wasm:browser:bundle": "deno bundle --platform=browser js/browser_smoke.ts -o target/browser-smoke.js",
+    "wasm:browser:test": "deno task wasm:build && deno task wasm:browser:bundle && deno test --allow-read --allow-net=127.0.0.1 --allow-run --allow-env=MECO_BROWSER,MECO_EMBEDDED_BROWSER js/browser_test.ts",
+    "wasm:embedded:build": "MECO_EMBEDDED_ARTIFACT=../../benchmarks/artifacts/harbor.mecob CARGO_TARGET_DIR=target/embedded cargo +1.85.0 build -p mecojoni-wasm --target wasm32-unknown-unknown",
+    "wasm:embedded:test": "deno task wasm:embedded:build && deno test --allow-read js/embedded_test.ts",
+    "wasm:embedded:browser:bundle": "deno bundle --platform=browser js/embedded_browser_smoke.ts -o target/embedded-browser-smoke.js",
+    "wasm:embedded:browser:test": "deno task wasm:embedded:build && deno task wasm:embedded:browser:bundle && MECO_EMBEDDED_BROWSER=1 deno test --allow-read --allow-net=127.0.0.1 --allow-run --allow-env=MECO_BROWSER,MECO_EMBEDDED_BROWSER js/browser_test.ts",
+    "js:check": "deno fmt --check deno.json js && deno check js/mecojoni.ts js/mecojoni_test.ts js/workloads.ts js/workloads_test.ts js/workloads_bench.ts js/embedded_test.ts js/browser_smoke.ts js/embedded_browser_smoke.ts js/browser_test.ts js/browser_server.ts",
+    "mcp:build": "cargo +1.85.0 build -p mecojoni-cli",
+    "mcp:check": "deno fmt --check mcp && deno check mcp/server.ts mcp/server_test.ts",
+    "mcp:test": "deno task mcp:build && deno test --allow-read --allow-run --allow-env=MECO_BIN,MECO_PROJECT_ROOT mcp/server_test.ts"
+  }
+}

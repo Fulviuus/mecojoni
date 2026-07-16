@@ -1,0 +1,10 @@
+---
+meco: 1.0
+module: common
+exports: [person]
+---
+
+# person
+- Ada
+- Marcus
+- Priya

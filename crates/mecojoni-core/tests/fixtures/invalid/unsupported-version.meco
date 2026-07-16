@@ -1,0 +1,7 @@
+---
+meco: 1
+module: npc
+---
+
+# greeting
+- Hello.

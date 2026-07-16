@@ -1,0 +1,16 @@
+---
+meco: 1.0
+module: independent-errors
+---
+
+# broken-weight
+- [0] never
+
+# broken-escape
+- bad \q
+
+# broken-call
+- &notice extra
+
+# recovered
+- still parsed for recovery

@@ -1,0 +1,9 @@
+---
+meco: 1.0
+module: hello
+entry: greeting
+exports: [greeting]
+---
+
+# greeting
+- Hello, world!

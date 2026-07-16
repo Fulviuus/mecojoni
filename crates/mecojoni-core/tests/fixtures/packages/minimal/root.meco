@@ -1,0 +1,10 @@
+---
+meco: 1.0
+module: fixture
+imports:
+  common: "./common.meco"
+exports: [greeting]
+---
+
+# greeting
+- Hello, @common.person!
