@@ -47,6 +47,53 @@ opens it without a content fetch; the generic WASM returns a capability error.
 The Chrome smoke test asserts that the content build requests neither `.meco`
 nor `.mecob` at runtime.
 
+## Why v2?
+
+The v1 format proves that Markdown headings, list items, references, weights, and
+seeded generation make an approachable grammar format. It deliberately leaves out
+host data, imports, rule parameters, conditions, localization, and a formal
+whitespace model. Those omissions keep a small prototype small, but they become
+limiting as a grammar becomes a game-facing content system.
+
+V2 keeps authored text at the centre. The visible output remains easy to scan:
+
+```meco
+# greeting
+- Hello, @person!
+- @person, @observation.
+```
+
+The additional syntax is reserved for structure that does not itself emit text:
+
+```meco
+- {mood is tense}
+  {common.name as hero}
+  &arrival <- hero: $hero
+```
+
+The braces establish eligibility and data; the final line is the complete
+localized message that will be rendered.
+
+## V1 and v2 at a glance
+
+| Area | V1 | V2 design |
+| --- | --- | --- |
+| Source layout | Directives plus Markdown rules | Strict front matter plus Markdown rules |
+| Default target | Required `@start` | Optional root `entry`; otherwise the host chooses an export |
+| References | `@rule` | `@rule`, with `@{rule}` for explicit boundaries and captures |
+| Empty output | `@empty` or `ε` | `""` |
+| Data-dependent weights | Not available | `[weight = expression]` over immutable numeric inputs/parameters; an evaluated zero excludes that production |
+| Literal `@` | `@@` | `\@`, quoted strings, or raw literals |
+| Comments | Whole-line `//` | Markdown comments: `<!-- ... -->` |
+| Inputs and types | Not available | Typed front-matter inputs and finite types |
+| Rule parameters | Not available | `# rule <- value: type` and `@rule <- value: $input` |
+| Conditions | Not available | Non-emitting guards such as `{mood is tense}` |
+| Reuse one generated value | Not available | Emitting captures and non-emitting bindings |
+| Imports and visibility | Not available | Modules, aliases, imports, and explicit exports |
+| Localization | Not available | Complete external messages through `&message` |
+| Sampler configuration | Runtime `random` / `varied` option | Optional `weighted/1` or `diverse/1` authoring default, overridable by the host |
+| Safety and analysis | Reachability/productivity checks | Typed calls, effects, module visibility, iterative limits, traces, audits, and replay-oriented sessions |
+
 ## Build, test, and deploy
 
 Run all commands below from the repository root. Rust 1.85 with the
@@ -133,53 +180,6 @@ details.
 
 The syntax in this README is authoritative. `V2_SPECIFICATION.md` must be updated
 with every syntax change; if the documents temporarily disagree, this README wins.
-
-## Why v2?
-
-The v1 format proves that Markdown headings, list items, references, weights, and
-seeded generation make an approachable grammar format. It deliberately leaves out
-host data, imports, rule parameters, conditions, localization, and a formal
-whitespace model. Those omissions keep a small prototype small, but they become
-limiting as a grammar becomes a game-facing content system.
-
-V2 keeps authored text at the centre. The visible output remains easy to scan:
-
-```meco
-# greeting
-- Hello, @person!
-- @person, @observation.
-```
-
-The additional syntax is reserved for structure that does not itself emit text:
-
-```meco
-- {mood is tense}
-  {common.name as hero}
-  &arrival <- hero: $hero
-```
-
-The braces establish eligibility and data; the final line is the complete
-localized message that will be rendered.
-
-## V1 and v2 at a glance
-
-| Area | V1 | V2 design |
-| --- | --- | --- |
-| Source layout | Directives plus Markdown rules | Strict front matter plus Markdown rules |
-| Default target | Required `@start` | Optional root `entry`; otherwise the host chooses an export |
-| References | `@rule` | `@rule`, with `@{rule}` for explicit boundaries and captures |
-| Empty output | `@empty` or `ε` | `""` |
-| Data-dependent weights | Not available | `[weight = expression]` over immutable numeric inputs/parameters; an evaluated zero excludes that production |
-| Literal `@` | `@@` | `\@`, quoted strings, or raw literals |
-| Comments | Whole-line `//` | Markdown comments: `<!-- ... -->` |
-| Inputs and types | Not available | Typed front-matter inputs and finite types |
-| Rule parameters | Not available | `# rule <- value: type` and `@rule <- value: $input` |
-| Conditions | Not available | Non-emitting guards such as `{mood is tense}` |
-| Reuse one generated value | Not available | Emitting captures and non-emitting bindings |
-| Imports and visibility | Not available | Modules, aliases, imports, and explicit exports |
-| Localization | Not available | Complete external messages through `&message` |
-| Sampler configuration | Runtime `random` / `varied` option | Optional `weighted/1` or `diverse/1` authoring default, overridable by the host |
-| Safety and analysis | Reachability/productivity checks | Typed calls, effects, module visibility, iterative limits, traces, audits, and replay-oriented sessions |
 
 ## Quick start
 
