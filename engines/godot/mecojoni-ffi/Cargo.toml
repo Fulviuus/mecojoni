@@ -12,7 +12,7 @@ license.workspace = true
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-mecojoni-core = { path = "../../crates/mecojoni-core" }
+mecojoni-core = { path = "../../../crates/mecojoni-core" }
 
 # This crate intentionally opts out of the workspace `unsafe_code = "deny"`
 # lint: a C ABI must dereference caller-supplied raw pointers. All unsafety is

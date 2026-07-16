@@ -4,7 +4,7 @@
  * against the built library, e.g. from the repository root:
  *
  *   cargo build -p mecojoni-ffi --release
- *   cc godot/mecojoni-ffi/tests/c_smoke.c -Igodot/mecojoni-ffi/include \
+ *   cc engines/godot/mecojoni-ffi/tests/c_smoke.c -Iengines/godot/mecojoni-ffi/include \
  *      target/release/libmecojoni_ffi.a -o /tmp/meco_smoke
  *   /tmp/meco_smoke examples/hello.meco path/to/hello.mecob
  *

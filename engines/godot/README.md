@@ -7,9 +7,9 @@ runtime crate — reached through two thin adapters:
 ```
 mecojoni-core (no_std Rust)          crates/mecojoni-core
         │
-mecojoni-ffi (Rust, C ABI)           godot/mecojoni-ffi  → libmecojoni_ffi.a
+mecojoni-ffi (Rust, C ABI)           engines/godot/mecojoni-ffi  → libmecojoni_ffi.a
         │  include/mecojoni.h
-GDExtension adapter (C++)            godot/gdextension   → libmecojoni.<platform>.<target>
+GDExtension adapter (C++)            engines/godot/gdextension   → libmecojoni.<platform>.<target>
         │
 Godot (GDScript: MecoGrammar, MecoPackageBuilder)
 ```
@@ -34,7 +34,7 @@ Requirements: Rust (workspace toolchain), CMake ≥ 3.22, a C++17 compiler,
 and a `godot-cpp` checkout:
 
 ```sh
-cd godot/gdextension
+cd engines/godot/gdextension
 git clone --depth 1 --branch godot-4.4-stable https://github.com/godotengine/godot-cpp
 cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --target mecojoni.template_debug   # editor + debug builds
@@ -47,7 +47,7 @@ library. Outputs land in `demo/bin/`, where `mecojoni.gdextension` expects
 them; copy `demo/bin/` (the `.gdextension` file plus libraries) into any
 other Godot project to use the extension there.
 
-To try the demo, open `godot/demo` in Godot 4.4+ and run it. It compiles
+To try the demo, open `engines/godot/demo` in Godot 4.4+ and run it. It compiles
 `data/hello.meco`, round-trips an in-memory artifact, and compiles the
 multi-module `data/npc` package with a host input:
 

@@ -24,7 +24,7 @@ add_subdirectory(godot-cpp SYSTEM)
 # --- Rust C ABI library (mecojoni-ffi) --------------------------------------
 # Always built in release: the grammar runtime's speed should not depend on
 # the C++ configuration, and cargo makes the re-run a cheap no-op.
-set(MECO_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../..")
+set(MECO_REPO_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../..")
 if(WIN32)
     set(MECO_FFI_LIB "${MECO_REPO_ROOT}/target/release/mecojoni_ffi.lib")
 else()
