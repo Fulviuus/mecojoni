@@ -6,7 +6,7 @@ sampler: weighted/1
 inputs:
   playerName: text
 imports:
-  common: "./common.meco.md"
+  common: "./common.meco"
 exports: [line, literal-shell]
 ---
 

@@ -36,15 +36,15 @@ async function weightedPackage(): Promise<PackageDescription> {
       {
         canonicalId: "root",
         sourceId: 0,
-        sourceName: "root.meco.md",
-        source: await Deno.readTextFile(new URL("root.meco.md", fixture)),
-        resolvedImports: [{ authoredPath: "./common.meco.md", targetId: "common" }],
+        sourceName: "root.meco",
+        source: await Deno.readTextFile(new URL("root.meco", fixture)),
+        resolvedImports: [{ authoredPath: "./common.meco", targetId: "common" }],
       },
       {
         canonicalId: "common",
         sourceId: 1,
-        sourceName: "common.meco.md",
-        source: await Deno.readTextFile(new URL("common.meco.md", fixture)),
+        sourceName: "common.meco",
+        source: await Deno.readTextFile(new URL("common.meco", fixture)),
         resolvedImports: [],
       },
     ],
@@ -62,15 +62,15 @@ async function milestone5Package(): Promise<PackageDescription> {
       {
         canonicalId: "root",
         sourceId: 0,
-        sourceName: "root.meco.md",
-        source: await Deno.readTextFile(new URL("root.meco.md", fixture)),
-        resolvedImports: [{ authoredPath: "./common.meco.md", targetId: "common" }],
+        sourceName: "root.meco",
+        source: await Deno.readTextFile(new URL("root.meco", fixture)),
+        resolvedImports: [{ authoredPath: "./common.meco", targetId: "common" }],
       },
       {
         canonicalId: "common",
         sourceId: 1,
-        sourceName: "common.meco.md",
-        source: await Deno.readTextFile(new URL("common.meco.md", fixture)),
+        sourceName: "common.meco",
+        source: await Deno.readTextFile(new URL("common.meco", fixture)),
         resolvedImports: [],
       },
     ],
@@ -87,8 +87,8 @@ async function milestone6Package(): Promise<PackageDescription> {
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "root.meco.md",
-      source: await Deno.readTextFile(new URL("root.meco.md", fixture)),
+      sourceName: "root.meco",
+      source: await Deno.readTextFile(new URL("root.meco", fixture)),
       resolvedImports: [],
     }],
   };
@@ -96,7 +96,7 @@ async function milestone6Package(): Promise<PackageDescription> {
 
 async function milestone7Package(): Promise<PackageDescription> {
   const fixture = new URL(
-    "../crates/mecojoni-core/tests/fixtures/packages/milestone7/root.meco.md",
+    "../crates/mecojoni-core/tests/fixtures/packages/milestone7/root.meco",
     import.meta.url,
   );
   return {
@@ -104,7 +104,7 @@ async function milestone7Package(): Promise<PackageDescription> {
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "root.meco.md",
+      sourceName: "root.meco",
       source: await Deno.readTextFile(fixture),
       resolvedImports: [],
     }],
@@ -113,7 +113,7 @@ async function milestone7Package(): Promise<PackageDescription> {
 
 async function milestone8Package(): Promise<PackageDescription> {
   const fixture = new URL(
-    "../crates/mecojoni-core/tests/fixtures/packages/milestone8/root.meco.md",
+    "../crates/mecojoni-core/tests/fixtures/packages/milestone8/root.meco",
     import.meta.url,
   );
   return {
@@ -121,7 +121,7 @@ async function milestone8Package(): Promise<PackageDescription> {
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "root.meco.md",
+      sourceName: "root.meco",
       source: await Deno.readTextFile(fixture),
       resolvedImports: [],
     }],
@@ -178,7 +178,7 @@ Deno.test("Deno compiles and generates the native weighted seed corpus", async (
 Deno.test("Deno receives structured compiler diagnostics with bigint spans", async () => {
   const meco = await instantiate();
   const fixture = new URL(
-    "../crates/mecojoni-core/tests/fixtures/packages/compiler-invalid/undefined/root.meco.md",
+    "../crates/mecojoni-core/tests/fixtures/packages/compiler-invalid/undefined/root.meco",
     import.meta.url,
   );
   const compiled = meco.compilePackage({
@@ -186,7 +186,7 @@ Deno.test("Deno receives structured compiler diagnostics with bigint spans", asy
     modules: [{
       canonicalId: "root",
       sourceId: 7,
-      sourceName: "root.meco.md",
+      sourceName: "root.meco",
       source: await Deno.readTextFile(fixture),
       resolvedImports: [],
     }],
@@ -545,7 +545,7 @@ Deno.test("strict JS strings reject unpaired UTF-16 before WASM allocation", asy
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "broken.meco.md",
+      sourceName: "broken.meco",
       source: "\ud800",
       resolvedImports: [],
     }],

@@ -355,7 +355,7 @@ mod tests {
     fn messages_are_exempt_but_literal_shells_are_reported() {
         let source = SourceFile::new(
             SourceId::new(0),
-            "audit.meco.md",
+            "audit.meco",
             concat!(
                 "---\nmeco: 2\nmodule: audit\n---\n",
                 "# shell\n- The old pilot waited quietly.\n",
@@ -375,7 +375,7 @@ mod tests {
     fn rendered_audit_attributes_only_nodes_overlapping_the_repeated_fragment() {
         let source = SourceFile::new(
             SourceId::new(0),
-            "repetition.meco.md",
+            "repetition.meco",
             concat!(
                 "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n",
                 "# line\n- [weight = 1, id = shell] @opening @suffix\n",

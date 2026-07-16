@@ -15,7 +15,7 @@ let package = PackageInput {
     root_id: "hello".into(),
     modules: vec![PackageSource {
         canonical_id: "hello".into(),
-        source: SourceFile::new(SourceId::new(0), "hello.meco.md", source),
+        source: SourceFile::new(SourceId::new(0), "hello.meco", source),
         resolved_imports: vec![],
     }],
 };

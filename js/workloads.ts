@@ -79,7 +79,7 @@ export function packageDescription(workload: Workload): PackageDescription {
     modules: [{
       canonicalId: workload.name,
       sourceId: 0,
-      sourceName: `${workload.name}.meco.md`,
+      sourceName: `${workload.name}.meco`,
       source: workload.source,
       resolvedImports: [],
     }],

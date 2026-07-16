@@ -2,7 +2,7 @@
 meco: 2
 module: cycle-common
 imports:
-  root: "./root.meco.md"
+  root: "./root.meco"
 exports: [line]
 ---
 

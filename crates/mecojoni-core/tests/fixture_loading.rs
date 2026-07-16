@@ -29,12 +29,11 @@ fn milestone5_package() -> PackageInput {
                 canonical_id: "root".to_string(),
                 source: SourceFile::new(
                     SourceId::new(0),
-                    "root.meco.md",
-                    fs::read_to_string(directory.join("root.meco.md"))
-                        .expect("read Milestone 5 root"),
+                    "root.meco",
+                    fs::read_to_string(directory.join("root.meco")).expect("read Milestone 5 root"),
                 ),
                 resolved_imports: vec![ResolvedImport {
-                    authored_path: "./common.meco.md".to_string(),
+                    authored_path: "./common.meco".to_string(),
                     target_id: "common".to_string(),
                 }],
             },
@@ -42,8 +41,8 @@ fn milestone5_package() -> PackageInput {
                 canonical_id: "common".to_string(),
                 source: SourceFile::new(
                     SourceId::new(1),
-                    "common.meco.md",
-                    fs::read_to_string(directory.join("common.meco.md"))
+                    "common.meco",
+                    fs::read_to_string(directory.join("common.meco"))
                         .expect("read Milestone 5 common module"),
                 ),
                 resolved_imports: vec![],
@@ -271,12 +270,12 @@ fn milestone5_multimodule_fixture_generates_bindings_guards_and_frames() {
 #[test]
 fn milestone5_invalid_files_report_stable_semantic_codes() {
     let cases = [
-        ("type-mismatch.meco.md", "E_TYPE_MISMATCH"),
-        ("guard-binding.meco.md", "E_VALUE_NAME"),
-        ("weight-binding.meco.md", "E_VALUE_NAME"),
-        ("forward-capture.meco.md", "E_VALUE_NAME"),
-        ("shadow-input.meco.md", "E_BINDING_NAME"),
-        ("unused-binding.meco.md", "E_BINDING_NAME"),
+        ("type-mismatch.meco", "E_TYPE_MISMATCH"),
+        ("guard-binding.meco", "E_VALUE_NAME"),
+        ("weight-binding.meco", "E_VALUE_NAME"),
+        ("forward-capture.meco", "E_VALUE_NAME"),
+        ("shadow-input.meco", "E_BINDING_NAME"),
+        ("unused-binding.meco", "E_BINDING_NAME"),
     ];
     for (index, (name, expected)) in cases.iter().enumerate() {
         let path = fixture_path(&format!("packages/milestone5-invalid/{name}"));
@@ -299,13 +298,13 @@ fn milestone5_invalid_files_report_stable_semantic_codes() {
 
 #[test]
 fn loads_a_real_meco_file_from_the_filesystem() {
-    let path = fixture_path("valid/minimal.meco.md");
+    let path = fixture_path("valid/minimal.meco");
     let bytes = fs::read(&path).expect("read fixture");
     let source = SourceFile::from_utf8(SourceId::new(0), path.display().to_string(), &bytes)
         .expect("fixture is valid UTF-8");
 
     assert_eq!(source.id(), SourceId::new(0));
-    assert!(source.name().ends_with("minimal.meco.md"));
+    assert!(source.name().ends_with("minimal.meco"));
     assert!(source.text().contains("meco: 2"));
     assert!(source.text().contains("# greeting"));
     let header = parse_front_matter(&source).expect("fixture header parses");
@@ -318,7 +317,10 @@ fn loads_every_module_in_a_real_package_from_the_filesystem() {
     let mut paths = fs::read_dir(&package)
         .expect("read package directory")
         .map(|entry| entry.expect("read package entry").path())
-        .filter(|path| path.extension().is_some_and(|extension| extension == "md"))
+        .filter(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "meco")
+        })
         .collect::<Vec<_>>();
     paths.sort();
 
@@ -360,7 +362,7 @@ fn loads_every_module_in_a_real_package_from_the_filesystem() {
                 .clone();
             let resolved_imports = if module_name == "fixture" {
                 vec![ResolvedImport {
-                    authored_path: "./common.meco.md".to_string(),
+                    authored_path: "./common.meco".to_string(),
                     target_id: "common".to_string(),
                 }]
             } else {
@@ -395,8 +397,8 @@ fn loads_every_module_in_a_real_package_from_the_filesystem() {
 
 fn load_weighted_package() -> PackageInput {
     let directory = fixture_path("packages/weighted");
-    let root_path = directory.join("root.meco.md");
-    let common_path = directory.join("common.meco.md");
+    let root_path = directory.join("root.meco");
+    let common_path = directory.join("common.meco");
     PackageInput {
         root_id: "root".to_string(),
         modules: vec![
@@ -408,7 +410,7 @@ fn load_weighted_package() -> PackageInput {
                     fs::read_to_string(root_path).expect("read weighted root"),
                 ),
                 resolved_imports: vec![ResolvedImport {
-                    authored_path: "./common.meco.md".to_string(),
+                    authored_path: "./common.meco".to_string(),
                     target_id: "common".to_string(),
                 }],
             },
@@ -485,7 +487,7 @@ fn weighted_selection_matches_its_relative_probability_in_a_seed_corpus() {
 
 #[test]
 fn deep_filesystem_grammar_uses_the_heap_stack_and_exact_limits() {
-    let path = fixture_path("packages/deep/root.meco.md");
+    let path = fixture_path("packages/deep/root.meco");
     let package = PackageInput {
         root_id: "deep".to_string(),
         modules: vec![PackageSource {
@@ -526,7 +528,7 @@ fn deep_filesystem_grammar_uses_the_heap_stack_and_exact_limits() {
 
 fn load_compiler_invalid_package(case: &str) -> PackageInput {
     let directory = fixture_path(&format!("packages/compiler-invalid/{case}"));
-    let root_path = directory.join("root.meco.md");
+    let root_path = directory.join("root.meco");
     let mut modules = vec![PackageSource {
         canonical_id: "root".to_string(),
         source: SourceFile::new(
@@ -537,7 +539,7 @@ fn load_compiler_invalid_package(case: &str) -> PackageInput {
         resolved_imports: vec![],
     }];
     if case != "undefined" {
-        let common_path = directory.join("common.meco.md");
+        let common_path = directory.join("common.meco");
         modules.push(PackageSource {
             canonical_id: "common".to_string(),
             source: SourceFile::new(
@@ -548,12 +550,12 @@ fn load_compiler_invalid_package(case: &str) -> PackageInput {
             resolved_imports: vec![],
         });
         modules[0].resolved_imports.push(ResolvedImport {
-            authored_path: "./common.meco.md".to_string(),
+            authored_path: "./common.meco".to_string(),
             target_id: "common".to_string(),
         });
         if case == "cycle" {
             modules[1].resolved_imports.push(ResolvedImport {
-                authored_path: "./root.meco.md".to_string(),
+                authored_path: "./root.meco".to_string(),
                 target_id: "root".to_string(),
             });
         }
@@ -603,7 +605,7 @@ fn invalid_headers_match_checked_in_diagnostic_codes() {
     ];
 
     for (index, case) in cases.iter().enumerate() {
-        let source_path = fixture_path(&format!("invalid/{case}.meco.md"));
+        let source_path = fixture_path(&format!("invalid/{case}.meco"));
         let expected_path = fixture_path(&format!("expected/{case}.code"));
         let bytes = fs::read(&source_path).expect("read invalid fixture");
         let expected = fs::read_to_string(&expected_path).expect("read expected diagnostic");
@@ -876,7 +878,7 @@ fn invalid_body_fixtures_match_codes_and_exact_source_spans() {
     ];
 
     for (index, case) in cases.iter().enumerate() {
-        let source_path = fixture_path(&format!("invalid/{case}.meco.md"));
+        let source_path = fixture_path(&format!("invalid/{case}.meco"));
         let expected_path = fixture_path(&format!("expected/{case}.diag"));
         let source_text = fs::read_to_string(&source_path).expect("read invalid body fixture");
         let expected = fs::read_to_string(expected_path).expect("read expected body diagnostic");
@@ -910,7 +912,7 @@ fn invalid_body_fixtures_match_codes_and_exact_source_spans() {
 
 #[test]
 fn independent_syntax_errors_are_aggregated_from_a_real_fixture() {
-    let source_path = fixture_path("invalid/independent-errors.meco.md");
+    let source_path = fixture_path("invalid/independent-errors.meco");
     let expected_path = fixture_path("expected/independent-errors.diags");
     let source_text = fs::read_to_string(&source_path).expect("read recovery fixture");
     let expected = fs::read_to_string(expected_path).expect("read expected diagnostics");
@@ -941,7 +943,7 @@ fn independent_syntax_errors_are_aggregated_from_a_real_fixture() {
 
 #[test]
 fn composition_audit_matches_the_checked_in_finding_contract() {
-    let source_path = fixture_path("valid/composition-audit.meco.md");
+    let source_path = fixture_path("valid/composition-audit.meco");
     let expected_path = fixture_path("expected/composition-audit.findings");
     let source_text = fs::read_to_string(&source_path).expect("read audit source");
     let expected = fs::read_to_string(expected_path).expect("read audit findings");
@@ -990,7 +992,7 @@ fn cli_contract_fixture_covers_every_stream_and_status_class() {
 
 #[test]
 fn deterministic_filesystem_mutation_corpus_never_panics_or_accepts_invalid_utf8() {
-    let path = fixture_path("packages/milestone5/root.meco.md");
+    let path = fixture_path("packages/milestone5/root.meco");
     let original = fs::read(&path).expect("read canonical mutation seed");
     let replacements = [0_u8, b'@', b'#', b'"', 0x7f, 0xff];
     let step = (original.len() / 128).max(1);
@@ -1001,7 +1003,7 @@ fn deterministic_filesystem_mutation_corpus_never_panics_or_accepts_invalid_utf8
             mutated[offset] = replacement;
             if let Ok(source) = SourceFile::from_utf8(
                 SourceId::new(case),
-                format!("mutation-{case}.meco.md"),
+                format!("mutation-{case}.meco"),
                 &mutated,
             ) {
                 let _ = parse_module(&source);
@@ -1012,7 +1014,7 @@ fn deterministic_filesystem_mutation_corpus_never_panics_or_accepts_invalid_utf8
     for length in (0..original.len()).step_by(step) {
         if let Ok(source) = SourceFile::from_utf8(
             SourceId::new(case),
-            format!("truncated-{length}.meco.md"),
+            format!("truncated-{length}.meco"),
             &original[..length],
         ) {
             let _ = parse_module(&source);
@@ -1024,11 +1026,11 @@ fn deterministic_filesystem_mutation_corpus_never_panics_or_accepts_invalid_utf8
 
 #[test]
 fn unicode_terminal_text_and_crlf_normalization_match_from_a_real_fixture() {
-    let path = fixture_path("valid/unicode-terminal.meco.md");
+    let path = fixture_path("valid/unicode-terminal.meco");
     let lf = fs::read_to_string(&path).expect("read Unicode fixture");
     let crlf = lf.replace('\n', "\r\n");
     let lf_source = SourceFile::new(SourceId::new(0), path.display().to_string(), lf);
-    let crlf_source = SourceFile::new(SourceId::new(1), "unicode-terminal-crlf.meco.md", crlf);
+    let crlf_source = SourceFile::new(SourceId::new(1), "unicode-terminal-crlf.meco", crlf);
     let lf_module = parse_module(&lf_source).expect("LF Unicode fixture parses");
     let crlf_module = parse_module(&crlf_source).expect("CRLF Unicode fixture parses");
 
@@ -1060,7 +1062,7 @@ fn unicode_terminal_text_and_crlf_normalization_match_from_a_real_fixture() {
 
 #[test]
 fn cooked_block_interpolation_and_raw_blocks_are_distinct_in_a_real_fixture() {
-    let path = fixture_path("valid/cooked-block.meco.md");
+    let path = fixture_path("valid/cooked-block.meco");
     let source_text = fs::read_to_string(&path).expect("read block fixture");
     let source = SourceFile::new(SourceId::new(0), path.display().to_string(), source_text);
     let module = parse_module(&source).expect("block fixture parses");
@@ -1109,7 +1111,7 @@ fn cooked_block_interpolation_and_raw_blocks_are_distinct_in_a_real_fixture() {
 #[test]
 fn milestone6_files_format_english_polish_categories_and_explicit_fallback() {
     let directory = fixture_path("packages/milestone6");
-    let root_path = directory.join("root.meco.md");
+    let root_path = directory.join("root.meco");
     let package = PackageInput {
         root_id: "root".to_string(),
         modules: vec![PackageSource {
@@ -1185,8 +1187,8 @@ fn milestone6_invalid_files_report_missing_messages_and_schema_drift() {
     let directory = fixture_path("packages/milestone6");
     let manifest = milestone6_manifest(&directory);
     for (index, (name, code)) in [
-        ("missing-message.meco.md", DiagnosticCode::MESSAGE_MISSING),
-        ("schema-drift.meco.md", DiagnosticCode::MESSAGE_ARGUMENT),
+        ("missing-message.meco", DiagnosticCode::MESSAGE_MISSING),
+        ("schema-drift.meco", DiagnosticCode::MESSAGE_ARGUMENT),
     ]
     .iter()
     .enumerate()
@@ -1212,7 +1214,7 @@ fn milestone6_invalid_files_report_missing_messages_and_schema_drift() {
 
 #[test]
 fn milestone7_diverse_session_is_deterministic_transactional_and_gap_safe() {
-    let grammar = compile_package(&single_file_package("packages/milestone7/root.meco.md"))
+    let grammar = compile_package(&single_file_package("packages/milestone7/root.meco"))
         .expect("Milestone 7 package compiles");
     let mut session = SamplerSession::new(0);
     let mut store = RepetitionStore::new_location();
@@ -1337,7 +1339,7 @@ fn assert_milestone7_exempt_rules_generate(grammar: &CompiledGrammar) {
 
 #[test]
 fn milestone8_provenance_audits_and_nonempty_replay_round_trip_from_filesystem() {
-    let package = single_file_package("packages/milestone8/root.meco.md");
+    let package = single_file_package("packages/milestone8/root.meco");
     let manifest = MessageManifest {
         messages: vec![MessageDefinition {
             id: "arrival".to_string(),

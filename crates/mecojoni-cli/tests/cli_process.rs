@@ -23,7 +23,7 @@ fn text(bytes: &[u8]) -> &str {
 }
 
 fn root() -> PathBuf {
-    fixture("v2/root.meco.md")
+    fixture("v2/root.meco")
 }
 
 fn root_string() -> String {
@@ -107,7 +107,7 @@ fn every_defined_exit_status_and_no_partial_success_are_exercised() {
     let success = meco(&["check", &root]);
     assert_eq!(success.status.code(), Some(0));
 
-    let domain = meco(&["check", fixture("v2/invalid.meco.md").to_str().unwrap()]);
+    let domain = meco(&["check", fixture("v2/invalid.meco").to_str().unwrap()]);
     assert_eq!(domain.status.code(), Some(1));
     assert!(domain.stdout.is_empty());
     assert!(text(&domain.stderr).contains("E_UNDEFINED_RULE"));
@@ -128,7 +128,7 @@ fn every_defined_exit_status_and_no_partial_success_are_exercised() {
     assert_eq!(usage.status.code(), Some(2));
     assert!(usage.stdout.is_empty());
 
-    let io = meco(&["check", "definitely-not-present.meco.md"]);
+    let io = meco(&["check", "definitely-not-present.meco"]);
     assert_eq!(io.status.code(), Some(2));
     assert!(io.stdout.is_empty());
 
@@ -149,7 +149,7 @@ fn formatter_is_byte_stable_and_generation_semantics_are_unchanged() {
     assert_eq!(output.status.code(), Some(0));
     assert_eq!(output.stdout, fs::read(&root).unwrap());
 
-    let copied = temp_path("formatted.meco.md");
+    let copied = temp_path("formatted.meco");
     let formatted = meco(&[
         "fmt",
         root.to_str().unwrap(),
@@ -164,7 +164,7 @@ fn formatter_is_byte_stable_and_generation_semantics_are_unchanged() {
 #[test]
 fn real_v1_corpus_migrates_compiles_and_reports_honest_differences() {
     let source = fixture("v1/dialogue.meco");
-    let migrated = temp_path("dialogue.meco.md");
+    let migrated = temp_path("dialogue.meco");
     let migration = meco(&[
         "migrate",
         source.to_str().unwrap(),
@@ -234,7 +234,7 @@ fn jsonl_reports_and_duplicate_scalar_flags_are_stable() {
         );
     }
     for (command, source) in [
-        ("fmt", fixture("v2/root.meco.md")),
+        ("fmt", fixture("v2/root.meco")),
         ("migrate", fixture("v1/dialogue.meco")),
     ] {
         let output = meco(&[command, source.to_str().unwrap(), "--output=jsonl"]);
@@ -267,7 +267,7 @@ fn explicit_global_or_command_help_uses_stdout_and_success() {
 
 #[test]
 fn external_message_schema_is_loaded_for_check_and_manifest_export() {
-    let root = fixture("messages/root.meco.md");
+    let root = fixture("messages/root.meco");
     let messages = fixture("messages/messages.manifest");
     let checked = meco(&[
         "check",
@@ -298,8 +298,8 @@ fn external_message_schema_is_loaded_for_check_and_manifest_export() {
 #[test]
 fn published_single_and_multimodule_examples_run_from_the_filesystem() {
     let workspace = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let hello = workspace.join("examples/hello.meco.md");
-    let npc = workspace.join("examples/npc/root.meco.md");
+    let hello = workspace.join("examples/hello.meco");
+    let npc = workspace.join("examples/npc/root.meco");
     for arguments in [
         vec!["generate", hello.to_str().unwrap(), "--seed=7"],
         vec![

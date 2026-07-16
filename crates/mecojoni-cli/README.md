@@ -8,7 +8,7 @@ Build or run it from the workspace root:
 
 ```sh
 cargo +1.85.0 build -p mecojoni-cli
-cargo +1.85.0 run -p mecojoni-cli -- check path/to/root.meco.md
+cargo +1.85.0 run -p mecojoni-cli -- check path/to/root.meco
 ```
 
 The command surface is versioned as `cli/1`:

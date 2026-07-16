@@ -19,8 +19,8 @@ async function run(): Promise<void> {
   });
   const meco = await Mecojoni.instantiate(wasm);
   const [root, common, expected] = await Promise.all([
-    fetchText("/fixtures/weighted/root.meco.md"),
-    fetchText("/fixtures/weighted/common.meco.md"),
+    fetchText("/fixtures/weighted/root.meco"),
+    fetchText("/fixtures/weighted/common.meco"),
     fetchText("/fixtures/expected/weighted-seeds-v1.outputs"),
   ]);
   const compiled = meco.compilePackage({
@@ -29,14 +29,14 @@ async function run(): Promise<void> {
       {
         canonicalId: "root",
         sourceId: 0,
-        sourceName: "root.meco.md",
+        sourceName: "root.meco",
         source: root,
-        resolvedImports: [{ authoredPath: "./common.meco.md", targetId: "common" }],
+        resolvedImports: [{ authoredPath: "./common.meco", targetId: "common" }],
       },
       {
         canonicalId: "common",
         sourceId: 1,
-        sourceName: "common.meco.md",
+        sourceName: "common.meco",
         source: common,
         resolvedImports: [],
       },
@@ -64,8 +64,8 @@ async function run(): Promise<void> {
     modules: [{
       canonicalId: "root",
       sourceId: 7,
-      sourceName: "root.meco.md",
-      source: await fetchText("/fixtures/invalid/root.meco.md"),
+      sourceName: "root.meco",
+      source: await fetchText("/fixtures/invalid/root.meco"),
       resolvedImports: [],
     }],
   });
@@ -81,8 +81,8 @@ async function run(): Promise<void> {
   }
 
   const [typedRoot, typedCommon, typedExpected] = await Promise.all([
-    fetchText("/fixtures/milestone5/root.meco.md"),
-    fetchText("/fixtures/milestone5/common.meco.md"),
+    fetchText("/fixtures/milestone5/root.meco"),
+    fetchText("/fixtures/milestone5/common.meco"),
     fetchText("/fixtures/expected/milestone5-seeds-v1.outputs"),
   ]);
   const typed = meco.compilePackage({
@@ -91,14 +91,14 @@ async function run(): Promise<void> {
       {
         canonicalId: "root",
         sourceId: 0,
-        sourceName: "root.meco.md",
+        sourceName: "root.meco",
         source: typedRoot,
-        resolvedImports: [{ authoredPath: "./common.meco.md", targetId: "common" }],
+        resolvedImports: [{ authoredPath: "./common.meco", targetId: "common" }],
       },
       {
         canonicalId: "common",
         sourceId: 1,
-        sourceName: "common.meco.md",
+        sourceName: "common.meco",
         source: typedCommon,
         resolvedImports: [],
       },
@@ -140,7 +140,7 @@ async function run(): Promise<void> {
   }
 
   const [localizedRoot, englishCatalog, polishCatalog] = await Promise.all([
-    fetchText("/fixtures/milestone6/root.meco.md"),
+    fetchText("/fixtures/milestone6/root.meco"),
     fetchText("/fixtures/milestone6/en.catalog"),
     fetchText("/fixtures/milestone6/pl.catalog"),
   ]);
@@ -185,7 +185,7 @@ async function run(): Promise<void> {
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "root.meco.md",
+      sourceName: "root.meco",
       source: localizedRoot,
       resolvedImports: [],
     }],
@@ -226,7 +226,7 @@ async function run(): Promise<void> {
   }
 
   const [diverseRoot, diverseExpected] = await Promise.all([
-    fetchText("/fixtures/milestone7/root.meco.md"),
+    fetchText("/fixtures/milestone7/root.meco"),
     fetchText("/fixtures/expected/milestone7-sequence-v1.outputs"),
   ]);
   const diverse = meco.compilePackage({
@@ -234,7 +234,7 @@ async function run(): Promise<void> {
     modules: [{
       canonicalId: "root",
       sourceId: 0,
-      sourceName: "root.meco.md",
+      sourceName: "root.meco",
       source: diverseRoot,
       resolvedImports: [],
     }],

@@ -344,6 +344,10 @@ exports: [pickup, greeting, warning]
 
 ## The `.meco` format
 
+`.meco` is the canonical v2 source extension used by repository fixtures,
+imports, examples, editor integration, and generated documentation. The portable
+parser still consumes host-supplied source independently of its filename.
+
 ### Front matter, modules, and entries
 
 Every module declares `meco: 2` and a `module` name. The header is a strict
@@ -731,8 +735,8 @@ v2 source. It never silently reinterprets old files:
 
 ```sh
 cargo +1.85.0 run -p mecojoni-cli -- \
-  migrate dialogue.meco --write dialogue.meco.md
-cargo +1.85.0 run -p mecojoni-cli -- check dialogue.meco.md
+  migrate dialogue.meco --write dialogue.meco
+cargo +1.85.0 run -p mecojoni-cli -- check dialogue.meco
 ```
 
 | V1 source | V2 migration |
@@ -760,10 +764,10 @@ The optional `mecojoni-cli` crate provides `check`, `generate`, `trace`, `lint`,
 from an explicit root while the portable core continues to perform no I/O.
 
 ```sh
-cargo +1.85.0 run -p mecojoni-cli -- check npc.meco.md
+cargo +1.85.0 run -p mecojoni-cli -- check npc.meco
 cargo +1.85.0 run -p mecojoni-cli -- \
-  generate npc.meco.md --seed 7 --data playerName=Rin
-cargo +1.85.0 run -p mecojoni-cli -- lint npc.meco.md --deny-warnings
+  generate npc.meco --seed 7 --data playerName=Rin
+cargo +1.85.0 run -p mecojoni-cli -- lint npc.meco --deny-warnings
 ```
 
 Human output and `cli/1` JSONL have fixed stdout/stderr and exit-status contracts.

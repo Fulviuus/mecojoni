@@ -13,7 +13,7 @@ inputs:
   enabled: boolean
 
 imports:
-  common: "./common.meco.md"
+  common: "./common.meco"
 
 exports: [arrival, recursion]
 ---

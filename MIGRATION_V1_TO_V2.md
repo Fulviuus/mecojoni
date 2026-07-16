@@ -5,8 +5,8 @@ rules. It does not parse v1 as if it were v2.
 
 ```sh
 cargo +1.85.0 run -p mecojoni-cli -- \
-  migrate old-dialogue.meco --write new-dialogue.meco.md
-cargo +1.85.0 run -p mecojoni-cli -- check new-dialogue.meco.md
+  migrate old-dialogue.meco --write new-dialogue.meco
+cargo +1.85.0 run -p mecojoni-cli -- check new-dialogue.meco
 ```
 
 The rewrite creates strict v2 front matter, retains the v1 `@start` rule as

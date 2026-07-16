@@ -22,6 +22,6 @@ mod tests {
     #[test]
     fn formatter_preserves_comments_blocks_and_literal_edge_spaces_exactly() {
         let source = "---\nmeco: 2\nmodule: fmt\nentry: line\n---\n\n<!-- keep -->\n# line\n- \" edge \"@tail\n\n# tail\n- |raw-\n  $literal\n";
-        assert_eq!(format_source(source, "fmt.meco.md").unwrap(), source);
+        assert_eq!(format_source(source, "fmt.meco").unwrap(), source);
     }
 }

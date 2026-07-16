@@ -114,7 +114,7 @@ mod tests {
     fn accepts_unicode_terminal_text() {
         let source = SourceFile::from_utf8(
             SourceId::new(0),
-            "unicode.meco.md",
+            "unicode.meco",
             "# greeting\n- こんにちは 🌍".as_bytes(),
         )
         .expect("valid UTF-8");
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn reports_invalid_utf8_offset() {
-        let error = SourceFile::from_utf8(SourceId::new(0), "broken.meco.md", &[b'a', 0xff, b'b'])
+        let error = SourceFile::from_utf8(SourceId::new(0), "broken.meco", &[b'a', 0xff, b'b'])
             .expect_err("invalid UTF-8 must fail");
 
         assert_eq!(error.valid_up_to(), 1);
@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn maps_utf8_bytes_to_unicode_scalar_offsets() {
-        let source = SourceFile::new(SourceId::new(0), "unicode.meco.md", "a🦀z");
+        let source = SourceFile::new(SourceId::new(0), "unicode.meco", "a🦀z");
 
         assert_eq!(source.position(1), Some(crate::SourcePosition::new(1, 1)));
         assert_eq!(source.position(5), Some(crate::SourcePosition::new(5, 2)));

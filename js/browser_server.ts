@@ -13,20 +13,20 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/weighted/root.meco.md",
+    "/fixtures/weighted/root.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/weighted/root.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/weighted/root.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
     },
   ],
   [
-    "/fixtures/weighted/common.meco.md",
+    "/fixtures/weighted/common.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/weighted/common.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/weighted/common.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
@@ -43,30 +43,30 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/invalid/root.meco.md",
+    "/fixtures/invalid/root.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/compiler-invalid/undefined/root.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/compiler-invalid/undefined/root.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
     },
   ],
   [
-    "/fixtures/milestone5/root.meco.md",
+    "/fixtures/milestone5/root.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/milestone5/root.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/milestone5/root.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
     },
   ],
   [
-    "/fixtures/milestone5/common.meco.md",
+    "/fixtures/milestone5/common.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/milestone5/common.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/milestone5/common.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
@@ -83,10 +83,10 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/milestone6/root.meco.md",
+    "/fixtures/milestone6/root.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/milestone6/root.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/milestone6/root.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
@@ -113,10 +113,10 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/milestone7/root.meco.md",
+    "/fixtures/milestone7/root.meco",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/packages/milestone7/root.meco.md",
+        "crates/mecojoni-core/tests/fixtures/packages/milestone7/root.meco",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",

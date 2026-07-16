@@ -50,7 +50,7 @@ impl Workload {
                 canonical_id: self.name.to_string(),
                 source: SourceFile::new(
                     SourceId::new(0),
-                    format!("{}.meco.md", self.name),
+                    format!("{}.meco", self.name),
                     &self.source,
                 ),
                 resolved_imports: vec![],

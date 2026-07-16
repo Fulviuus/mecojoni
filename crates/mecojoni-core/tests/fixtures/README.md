@@ -4,7 +4,7 @@
 - `invalid/` contains malformed standalone sources paired with diagnostics in
   `expected/` once the relevant compiler phase exists.
 - `packages/` contains directory-based, multi-module packages. The package root
-  is always named `root.meco.md`; imports are resolved relative to it.
+  is always named `root.meco`; imports are resolved relative to it.
 - `expected/` contains stable diagnostic or generated-output records. Each record
   names its source fixture and the compatibility version that produced it.
 

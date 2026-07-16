@@ -12,7 +12,7 @@
       {
         "id": "mecojoni",
         "aliases": ["Mecojoni", "meco"],
-        "extensions": [".meco", ".meco.md"],
+        "extensions": [".meco"],
         "configuration": "./language-configuration.json"
       }
     ],

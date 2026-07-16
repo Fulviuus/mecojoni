@@ -1554,7 +1554,7 @@ mod tests {
     fn overlapping_session_or_store_transactions_are_rejected() {
         let source = SourceFile::new(
             SourceId::new(0),
-            "busy.meco.md",
+            "busy.meco",
             "---\nmeco: 2\nmodule: busy\nentry: line\nexports: [line]\n---\n# line\n- ok\n",
         );
         let grammar = compile_package(&PackageInput {
@@ -1585,7 +1585,7 @@ mod tests {
     fn nonempty_snapshots_round_trip_and_reproduce_the_next_output() {
         let source = SourceFile::new(
             SourceId::new(0),
-            "snapshot.meco.md",
+            "snapshot.meco",
             concat!(
                 "---\nmeco: 2\nmodule: snapshot\nentry: line\nexports: [line]\n---\n",
                 "# line\n- Alpha signal.\n- Beta signal.\n- Gamma signal.\n",

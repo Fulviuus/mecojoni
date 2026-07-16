@@ -736,12 +736,12 @@ mod tests {
     use crate::{DiagnosticCode, SourceFile, SourceId};
 
     fn parse(text: &str) -> super::FrontMatter {
-        let source = SourceFile::new(SourceId::new(0), "test.meco.md", text);
+        let source = SourceFile::new(SourceId::new(0), "test.meco", text);
         parse_front_matter(&source).expect("header should parse")
     }
 
     fn error_code(text: &str) -> DiagnosticCode {
-        let source = SourceFile::new(SourceId::new(0), "test.meco.md", text);
+        let source = SourceFile::new(SourceId::new(0), "test.meco", text);
         parse_front_matter(&source)
             .expect_err("header should fail")
             .diagnostics()[0]

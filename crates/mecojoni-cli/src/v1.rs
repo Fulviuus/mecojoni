@@ -609,7 +609,7 @@ mod tests {
             root_id: "root".to_string(),
             modules: vec![PackageSource {
                 canonical_id: "root".to_string(),
-                source: SourceFile::new(SourceId::new(0), "migrated.meco.md", report.source),
+                source: SourceFile::new(SourceId::new(0), "migrated.meco", report.source),
                 resolved_imports: vec![],
             }],
         };

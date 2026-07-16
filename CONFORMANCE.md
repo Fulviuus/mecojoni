@@ -5,7 +5,7 @@ contracts rather than snapshots of implementation internals.
 
 | Contract | Location | Proof |
 | --- | --- | --- |
-| Canonical syntax corpus | `crates/mecojoni-core/tests/fixtures/readme-corpus.meco.md` | Parsed AST prediction and exact generation tests. |
+| Canonical syntax corpus | `README.md` plus `crates/mecojoni-core/tests/fixtures/expected/readme-corpus.ast` | Parsed AST prediction and exact generation tests. |
 | Invalid headers/bodies | `crates/mecojoni-core/tests/fixtures/invalid/` | Stable codes and exact byte/scalar spans. |
 | Package/import semantics | `crates/mecojoni-core/tests/fixtures/packages/` | Filesystem modules, imports, visibility, typing, messages, diversity, and replay. |
 | Numeric/PRNG/profile vectors | `crates/mecojoni-core/tests/fixtures/expected/` | Exact cross-runtime values and policy constants. |

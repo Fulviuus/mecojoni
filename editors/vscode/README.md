@@ -1,9 +1,9 @@
 # Mecojoni editor grammar
 
 This dependency-free VS Code extension contributes the `source.mecojoni`
-TextMate grammar for `.meco` and `.meco.md` files plus comment, bracket, folding,
-and auto-closing defaults. Open this directory as an extension development host
-or copy it into a local extension package.
+TextMate grammar for `.meco` files plus comment, bracket, folding, and
+auto-closing defaults. Open this directory as an extension development host or
+copy it into a local extension package.
 
 The grammar highlights the strict front matter, rules, productions, weights,
 comments, raw/cooked strings and blocks, guards/bindings, rule references,

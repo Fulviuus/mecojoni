@@ -1451,7 +1451,7 @@ mod tests {
         encoder.u32(1);
         encoder.string("root");
         encoder.u32(0);
-        encoder.string("root.meco.md");
+        encoder.string("root.meco");
         encoder.bytes(source.as_bytes());
         encoder.u32(0);
         encoder.into_bytes()
@@ -1476,7 +1476,7 @@ mod tests {
         encoder.u32(1);
         encoder.string("root");
         encoder.u32(0);
-        encoder.string("root.meco.md");
+        encoder.string("root.meco");
         encoder.bytes(source.as_bytes());
         encoder.u32(0);
         encoder.into_bytes()

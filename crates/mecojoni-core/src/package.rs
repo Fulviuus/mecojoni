@@ -147,17 +147,17 @@ mod tests {
                     canonical_id: "root".to_string(),
                     source: source(
                         0,
-                        "root.meco.md",
-                        "---\nmeco: 2\nmodule: root\nimports:\n  common: \"./common.meco.md\"\n---\n",
+                        "root.meco",
+                        "---\nmeco: 2\nmodule: root\nimports:\n  common: \"./common.meco\"\n---\n",
                     ),
                     resolved_imports: vec![ResolvedImport {
-                        authored_path: "./common.meco.md".to_string(),
+                        authored_path: "./common.meco".to_string(),
                         target_id: "common".to_string(),
                     }],
                 },
                 PackageSource {
                     canonical_id: "common".to_string(),
-                    source: source(1, "common.meco.md", "---\nmeco: 2\nmodule: common\n---\n"),
+                    source: source(1, "common.meco", "---\nmeco: 2\nmodule: common\n---\n"),
                     resolved_imports: vec![],
                 },
             ],
