@@ -105,13 +105,11 @@ deno task wasm:browser:test
 deno task wasm:embedded:browser:test
 ```
 
-The embedded tasks use the checked-in Harbor `.mecob`; the generic browser test
-also fetches an external `.mecob`. For an application-specific release build,
-compile the package with `meco compile-artifact`, set
-`MECO_EMBEDDED_ARTIFACT` while building `mecojoni-wasm`, instantiate the resulting
-WASM, and call `openEmbeddedGrammar()`. The root README contains the complete
-command sequence and output paths in
-[`Build, test, and deploy`](../README.md#build-test-and-deploy).
+The embedded tasks use the checked-in Harbor `.mecob`; the generic browser test also fetches an
+external `.mecob`. For an application-specific release build, compile the package with
+`meco compile-artifact`, set `MECO_EMBEDDED_ARTIFACT` while building `mecojoni-wasm`, instantiate
+the resulting WASM, and call `openEmbeddedGrammar()`. The root README contains the complete command
+sequence and output paths in [`Build, test, and deploy`](../README.md#build-test-and-deploy).
 
 Package and grammar objects own opaque handles and provide idempotent `dispose()`. Applications
 should dispose grammars in `finally` blocks. Result handles and temporary linear-memory buffers are

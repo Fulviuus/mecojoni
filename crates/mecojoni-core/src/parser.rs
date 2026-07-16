@@ -1736,7 +1736,7 @@ mod tests {
         SourceFile::new(
             SourceId::new(0),
             "test.meco",
-            alloc::format!("---\nmeco: 2\nmodule: test\n---\n\n{body}"),
+            alloc::format!("---\nmeco: 1\nmodule: test\n---\n\n{body}"),
         )
     }
 

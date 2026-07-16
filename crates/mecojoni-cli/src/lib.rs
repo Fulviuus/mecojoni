@@ -3,13 +3,8 @@
 
 mod format;
 mod loader;
-mod v1;
 
 pub use format::format_source;
-pub use v1::{
-    MigrationDiagnostic, MigrationReport, V1Document, V1Error, V1Part, V1Production, V1Rule,
-    migrate_v1, parse_v1,
-};
 
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -97,7 +92,6 @@ enum Command {
     Lint,
     Audit,
     Manifest,
-    Migrate,
     Format,
     Bench,
     CompileArtifact,
@@ -186,7 +180,6 @@ fn execute<O: Write, E: Write>(
     stderr: &mut E,
 ) -> CliResult<i32> {
     match command {
-        Command::Migrate => migrate_command(options, stdout, stderr),
         Command::Format => format_command(options, stdout),
         Command::CompileArtifact => compile_artifact_command(options, stdout),
         Command::InspectArtifact => inspect_artifact_command(options, stdout),
@@ -228,8 +221,7 @@ fn package_command<O: Write, E: Write>(
         Command::Audit => audit(&grammar, options, stdout),
         Command::Manifest => manifest(&grammar, options, stdout),
         Command::Bench => bench(&grammar, options, stdout),
-        Command::Migrate
-        | Command::Format
+        Command::Format
         | Command::CompileArtifact
         | Command::InspectArtifact
         | Command::VerifyArtifact
@@ -686,73 +678,6 @@ fn bench<O: Write>(grammar: &CompiledGrammar, options: &Options, stdout: &mut O)
     Ok(0)
 }
 
-fn migrate_command<O: Write, E: Write>(
-    options: &Options,
-    stdout: &mut O,
-    stderr: &mut E,
-) -> CliResult<i32> {
-    let path = required_path(options)?;
-    let source = fs::read_to_string(path).map_err(|error| CliError::io(path, &error))?;
-    let hint = path
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("migrated");
-    let report = migrate_v1(&source, hint).map_err(|error| {
-        CliError::domain_message(
-            error
-                .diagnostics
-                .iter()
-                .map(|item| format!("{}:{}: {}", item.code, item.line, item.message))
-                .collect::<Vec<_>>()
-                .join("\n"),
-        )
-    })?;
-    if options.output == OutputMode::Text {
-        for diagnostic in &report.diagnostics {
-            writeln!(
-                stderr,
-                "{}:{}: {}",
-                diagnostic.code, diagnostic.line, diagnostic.message
-            )
-            .map_err(output_error)?;
-        }
-        for difference in &report.differences {
-            writeln!(stderr, "M_BEHAVIOR_CHANGE: {difference}").map_err(output_error)?;
-        }
-    }
-    if let Some(write_path) = &options.write {
-        fs::write(write_path, &report.source).map_err(|error| CliError::io(write_path, &error))?;
-        if options.output == OutputMode::Jsonl {
-            writeln!(
-                stdout,
-                "{{\"cli\":\"{CLI_VERSION}\",\"kind\":\"migrate\",\"path\":{},\"diagnostics\":{},\"differences\":{}}}",
-                json_string(&write_path.display().to_string()),
-                migration_diagnostics_json(&report.diagnostics),
-                strings_json(&report.differences)
-            )
-            .map_err(output_error)?;
-        } else {
-            writeln!(stdout, "migrated {}", write_path.display()).map_err(output_error)?;
-        }
-    } else if options.output == OutputMode::Jsonl {
-        writeln!(
-            stdout,
-            "{{\"cli\":\"{CLI_VERSION}\",\"kind\":\"migrate\",\"source\":{},\"diagnostics\":{},\"differences\":{}}}",
-            json_string(&report.source),
-            migration_diagnostics_json(&report.diagnostics),
-            strings_json(&report.differences)
-        )
-        .map_err(output_error)?;
-    } else {
-        stdout
-            .write_all(report.source.as_bytes())
-            .map_err(output_error)?;
-    }
-    Ok(i32::from(
-        options.deny_warnings && !report.diagnostics.is_empty(),
-    ))
-}
-
 fn format_command<O: Write>(options: &Options, stdout: &mut O) -> CliResult<i32> {
     let path = required_path(options)?;
     let source = fs::read_to_string(path).map_err(|error| CliError::io(path, &error))?;
@@ -903,7 +828,6 @@ fn parse_command(value: &str) -> CliResult<Command> {
         "lint" => Ok(Command::Lint),
         "audit" => Ok(Command::Audit),
         "manifest" => Ok(Command::Manifest),
-        "migrate" => Ok(Command::Migrate),
         "fmt" | "format" => Ok(Command::Format),
         "bench" => Ok(Command::Bench),
         "compile-artifact" => Ok(Command::CompileArtifact),
@@ -1084,21 +1008,6 @@ fn diagnostics_json(diagnostics: &[Diagnostic]) -> String {
     format!("[{}]", items.join(","))
 }
 
-fn migration_diagnostics_json(diagnostics: &[MigrationDiagnostic]) -> String {
-    let items = diagnostics
-        .iter()
-        .map(|diagnostic| {
-            format!(
-                "{{\"code\":{},\"line\":{},\"message\":{}}}",
-                json_string(diagnostic.code),
-                diagnostic.line,
-                json_string(&diagnostic.message)
-            )
-        })
-        .collect::<Vec<_>>();
-    format!("[{}]", items.join(","))
-}
-
 fn strings_json(values: &[String]) -> String {
     format!(
         "[{}]",
@@ -1137,7 +1046,7 @@ fn output_error(error: std::io::Error) -> CliError {
 }
 
 fn usage() -> &'static str {
-    "Usage: meco <command> <source-or-artifact> [options]\n\nCommands:\n  check              Parse, compile, and validate a v2 package\n  generate           Generate deterministic weighted text\n  trace              Generate text with derivation traces\n  lint               Report compiler and composition warnings\n  audit              Sample and report structural/rendered repetition\n  manifest           Export the compiled input/message schema\n  migrate            Rewrite a frozen v1 source as explicit v2\n  fmt                Validate and conservatively format v2 source\n  bench              Measure deterministic local generation work\n  compile-artifact   Compile a complete source package to .mecob\n  inspect-artifact   Report verified artifact metadata\n  verify-artifact    Verify an artifact without generation\n  generate-artifact  Generate from a verified artifact\n\nOptions:\n  --output <text|jsonl>  Output contract (default: text)\n  --entry <rule>         Explicit exported qualified rule\n  --seed <u64>           Deterministic splitmix64 seed\n  --count <n>            Generation/bench count\n  --samples <n>          Audit sample count\n  --data <name=value>    Typed host input (repeatable)\n  --trace                 Include traces\n  --deny-warnings         Return status 1 when warnings occur\n  --write <path>          Write migrate/fmt/artifact output\n  --messages <path>       Message schema (id|name:type,...)\n  --profile <name>        Artifact profile: full, mapped, stripped\n  -h, --help              Show this help\n"
+    "Usage: meco <command> <source-or-artifact> [options]\n\nCommands:\n  check              Parse, compile, and validate a v1 package\n  generate           Generate deterministic weighted text\n  trace              Generate text with derivation traces\n  lint               Report compiler and composition warnings\n  audit              Sample and report structural/rendered repetition\n  manifest           Export the compiled input/message schema\n  fmt                Validate and conservatively format v1 source\n  bench              Measure deterministic local generation work\n  compile-artifact   Compile a complete source package to .mecob\n  inspect-artifact   Report verified artifact metadata\n  verify-artifact    Verify an artifact without generation\n  generate-artifact  Generate from a verified artifact\n\nOptions:\n  --output <text|jsonl>  Output contract (default: text)\n  --entry <rule>         Explicit exported qualified rule\n  --seed <u64>           Deterministic splitmix64 seed\n  --count <n>            Generation/bench count\n  --samples <n>          Audit sample count\n  --data <name=value>    Typed host input (repeatable)\n  --trace                 Include traces\n  --deny-warnings         Return status 1 when warnings occur\n  --write <path>          Write fmt/artifact output\n  --messages <path>       Message schema (id|name:type,...)\n  --profile <name>        Artifact profile: full, mapped, stripped\n  -h, --help              Show this help\n"
 }
 
 #[cfg(test)]

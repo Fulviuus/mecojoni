@@ -20,9 +20,8 @@ fn recorded_cross_runtime_result_covers_every_workload_and_harbor() {
             "missing {scenario}"
         );
     }
-    assert_eq!(result.matches("\"v1Js\"").count(), 6);
-    assert_eq!(result.matches("\"v2Rust\"").count(), 7);
-    assert_eq!(result.matches("\"v2Wasm\"").count(), 7);
+    assert_eq!(result.matches("\"nativeRust\"").count(), 7);
+    assert_eq!(result.matches("\"wasm\"").count(), 7);
 }
 
 #[test]

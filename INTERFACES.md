@@ -1,12 +1,11 @@
-# Mecojoni v2 Host Interface Contracts
+# Mecojoni v1 Host Interface Contracts
 
 Compatibility guarantees for these versioned surfaces are indexed in
 [`COMPATIBILITY.md`](COMPATIBILITY.md).
 
 This document freezes the implemented host-facing boundaries. `README.md`
-remains authoritative for language syntax,
-`V2_SYNTAX.md` formalizes parsing, and `V2_SPECIFICATION.md` owns runtime
-semantics.
+remains authoritative for language syntax, `SYNTAX.md` formalizes parsing, and
+`SPECIFICATION.md` owns runtime semantics.
 
 ## Host-supplied packages (`package/1`)
 
@@ -40,7 +39,7 @@ before constructing this value. None of that behavior enters core semantics.
 Package content/replay hashes include canonical IDs, source bytes, the explicit
 root, and sorted resolution edges, so a host resolution change is observable.
 
-Initial format 2 rejects import cycles. Rule recursion within the resolved package
+Initial format 1 rejects import cycles. Rule recursion within the resolved package
 remains legal subject to graph analysis and runtime limits.
 
 ## Rust weighted API (`weighted/1`)
@@ -317,5 +316,5 @@ commit success.
 Commands accept both `--flag value` and `--flag=value`, never consume another
 flag as a missing value, reject unknown/duplicate scalar flags, and write help to
 stdout only when explicitly requested. `check`, `lint`, `generate`, `trace`,
-`audit`, `manifest`, `migrate`, `fmt`, and `bench` follow this same contract.
+`audit`, `manifest`, `fmt`, and `bench` follow this same contract.
 Subprocess fixtures prove every row before `cli/1` is stable.

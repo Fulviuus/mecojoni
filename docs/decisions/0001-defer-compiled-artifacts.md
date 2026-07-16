@@ -1,4 +1,4 @@
-# ADR 0001: keep source packages as the v2 distribution format
+# ADR 0001: keep source packages as the v1 distribution format
 
 - Status: superseded by the measured `bytecode/1` decision at milestone B6;
   source remains authoritative while compiled deployment is now supported
@@ -10,7 +10,7 @@ freeze gates.
 
 ## Decision
 
-V2 does not define serialized compiled grammar artifacts. Hosts compile immutable
+V1 does not define serialized compiled grammar artifacts. Hosts compile immutable
 source packages once and reuse `CompiledGrammar`. Artifact hashes remain available
 for caches and replay validation, but a cache miss recompiles trusted source.
 

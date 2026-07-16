@@ -1,11 +1,11 @@
-# Mecojoni v2 compatibility policy
+# Mecojoni v1 compatibility policy
 
 These identifiers are compatibility contracts, not marketing labels.
 
 | Surface | Current contract | Compatible evolution |
 | --- | --- | --- |
-| Source language | `meco: 2` | Clarifications and new optional front-matter fields only when old valid source keeps its meaning; incompatible syntax requires `meco: 3`. |
-| Rust semantic API | `API_VERSION = 2` | Additive APIs before crate publication; removals or semantic changes require a major crate version and documented migration. |
+| Source language | `meco: 1` | Clarifications and new optional front-matter fields only when old valid source keeps its meaning; incompatible syntax requires `meco: 2`. |
+| Rust semantic API | `API_VERSION = 1` | Additive APIs before crate publication; removals or semantic changes require a major crate version and documented compatibility notes. |
 | Rational arithmetic | `rational/1` | Exact vectors cannot change under the same identifier. |
 | PRNG | `splitmix64/1` | Seed-to-word vectors cannot change. |
 | Independent sampler | `weighted/1` | Eligible weights, normalization, PRNG consumption, and seed mapping cannot change. Internal indexes may change only when outputs/traces remain identical. |
@@ -27,7 +27,6 @@ must branch on codes rather than English text.
 
 Replay receipts record the grammar artifact hash plus sampler, normalizer,
 tokenizer, snapshot, and state revisions needed to reject incompatible replay.
-Migration never claims v1/v2 seed compatibility.
 
 The crates remain unpublished (`publish = false`) until the project owner chooses
 distribution versioning and a root license. That administrative choice does not

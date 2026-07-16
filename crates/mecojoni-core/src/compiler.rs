@@ -4314,7 +4314,7 @@ mod tests {
     #[test]
     fn compiles_and_generates_exact_static_weights() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
             "# line\n- [0.5] A\n- [1.5] B\n",
         ));
         let grammar = compile_package(&package).expect("weighted package compiles");
@@ -4334,7 +4334,7 @@ mod tests {
     #[test]
     fn cached_static_fanout_preserves_traced_selection_and_seed_mapping() {
         let mut source = concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
             "# line\n",
         )
         .to_string();
@@ -4372,7 +4372,7 @@ mod tests {
     #[test]
     fn complete_messages_use_typed_manifest_and_synchronous_formatter() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: arrival\n",
+            "---\nmeco: 1\nmodule: root\nentry: arrival\n",
             "inputs:\n  itemCount: number\nexports: [arrival]\n---\n\n",
             "# arrival\n- {name as hero}\n  &arrival <- $hero, count: $itemCount\n",
             "# name\n- Ada\n",
@@ -4437,7 +4437,7 @@ mod tests {
     #[test]
     fn message_schema_and_transitive_effect_fail_with_stable_codes() {
         let missing = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# start\n- &unknown\n",
         ));
         assert_eq!(
@@ -4450,22 +4450,22 @@ mod tests {
 
         for source in [
             concat!(
-                "---\nmeco: 2\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
+                "---\nmeco: 1\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
                 "exports: [start]\n---\n\n# start\n- before @localized\n",
                 "# localized\n- &arrival <- hero: \"Ada\", count: $itemCount\n",
             ),
             concat!(
-                "---\nmeco: 2\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
+                "---\nmeco: 1\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
                 "exports: [start]\n---\n\n# start\n- @{localized as line}$line\n",
                 "# localized\n- &arrival <- hero: \"Ada\", count: $itemCount\n",
             ),
             concat!(
-                "---\nmeco: 2\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
+                "---\nmeco: 1\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
                 "exports: [start]\n---\n\n# start\n- {localized as line}\n  $line\n",
                 "# localized\n- &arrival <- hero: \"Ada\", count: $itemCount\n",
             ),
             concat!(
-                "---\nmeco: 2\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
+                "---\nmeco: 1\nmodule: root\nentry: start\ninputs:\n  itemCount: number\n",
                 "exports: [start]\n---\n\n# start\n",
                 "- &arrival <- hero: \"Ada\", count: $itemCount\n- plain\n",
             ),
@@ -4556,7 +4556,7 @@ mod tests {
     #[test]
     fn iterative_generation_reports_depth_without_stack_recursion() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: loop\nexports: [loop]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: loop\nexports: [loop]\n---\n\n",
             "# loop\n- [1] done\n- [999999999999999999] @loop\n",
         ));
         let grammar = compile_package(&package).expect("productive recursion compiles");
@@ -4582,7 +4582,7 @@ mod tests {
     #[test]
     fn rejects_reachable_unproductive_cycles() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: a\nexports: [a]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: a\nexports: [a]\n---\n\n",
             "# a\n- @b\n# b\n- @a\n",
         ));
         let error = compile_package(&package).expect_err("cycle has no terminal derivation");
@@ -4597,7 +4597,7 @@ mod tests {
     #[test]
     fn validates_named_call_arity_before_the_later_parameter_runtime() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# target <- name: text\n- hello\n",
             "# start\n- @target <- wrong: \"value\"\n",
         ));
@@ -4609,7 +4609,7 @@ mod tests {
     #[test]
     fn executes_typed_calls_guards_inputs_and_dynamic_weights() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\n",
             "types:\n  Mood: [calm, tense]\n",
             "inputs:\n  playerName: text\n  mood: Mood\n  urgency: number\n  enabled: boolean\n",
             "exports: [start]\n---\n\n",
@@ -4651,7 +4651,7 @@ mod tests {
     #[test]
     fn zero_dynamic_weight_and_false_guards_remove_productions() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\n",
             "inputs:\n  urgency: number\n  enabled: boolean\n",
             "exports: [start]\n---\n\n",
             "# start\n",
@@ -4677,7 +4677,7 @@ mod tests {
     #[test]
     fn invalid_dynamic_weight_results_have_stable_runtime_codes() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\n",
             "inputs:\n  weight: number\nexports: [start]\n---\n\n",
             "# start\n- [weight = weight - 1] value\n",
         ));
@@ -4700,7 +4700,7 @@ mod tests {
     #[test]
     fn bindings_and_captures_are_ordered_local_and_optionally_traced() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# start\n",
             "- {name as hero}\n",
             "  {name as companion}\n",
@@ -4729,7 +4729,7 @@ mod tests {
     #[test]
     fn nested_calls_use_fresh_explicit_parameter_frames() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# start\n- @outer <- outerName: \"outer\", innerName: \"inner\"\n",
             "# outer <- outerName: text, innerName: text\n",
             "- @inner <- name: $innerName, outerName: $outerName\n",
@@ -4746,7 +4746,7 @@ mod tests {
     #[test]
     fn request_data_and_call_types_are_checked() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\n",
             "types:\n  Mood: [calm, tense]\ninputs:\n  mood: Mood\n",
             "exports: [start]\n---\n\n",
             "# start\n- @line <- tone: $mood\n",
@@ -4767,7 +4767,7 @@ mod tests {
     #[test]
     fn rejects_scaled_static_weight_totals_outside_the_contract() {
         let mut source = concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
             "# line\n",
         )
         .to_string();
@@ -4790,7 +4790,7 @@ mod tests {
     #[test]
     fn retains_reachability_nullability_recursion_and_risk_facts() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# start\n- @nullable@risk\n",
             "# nullable\n- \"\"\n",
             "# risk\n- done\n- @risk@risk\n",
@@ -4815,7 +4815,7 @@ mod tests {
     #[test]
     fn enforces_expansion_output_and_sampler_limits_independently() {
         let package = package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: start\nexports: [start]\n---\n\n",
             "# start\n- @child\n# child\n- 🦀\n",
         ));
         let grammar = compile_package(&package).expect("limit package compiles");
@@ -4855,7 +4855,7 @@ mod tests {
 
     #[test]
     fn production_ids_survive_reordering_and_authored_ids_survive_edits() {
-        let header = "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n# line\n";
+        let header = "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n# line\n";
         let first = compile_package(&package(&format!(
             "{header}- Alpha.\n- Beta.\n- [weight = 1, id = fixed] Before.\n"
         )))
@@ -4884,7 +4884,7 @@ mod tests {
     #[test]
     fn identical_unlabelled_productions_are_rejected_as_identity_collisions() {
         let error = compile_package(&package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n",
             "# line\n- same\n- same\n",
         )))
         .expect_err("identical alternatives cannot receive stable IDs");
@@ -4896,7 +4896,7 @@ mod tests {
     #[test]
     fn provenance_covers_visible_emitters_and_keeps_bindings_non_emitting() {
         let grammar = compile_package(&package(concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n",
             "inputs:\n  playerName: text\n---\n",
             "# line\n- [weight = 1, id = root-shell] {name as hero}\n",
             "  Begin @deep $playerName and $hero.\n",

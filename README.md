@@ -1,20 +1,20 @@
 <p align="center">
-  <img src="v1/assets/mecojoni-logo.png" alt="Mecojoni" width="760">
+  <img src="assets/mecojoni-logo.png" alt="Mecojoni" width="760">
 </p>
 
 <p align="center">
   A Markdown-like language for compositional, localized generative text.
 </p>
 
-# Mecojoni v2
+# Mecojoni v1
 
-Mecojoni v2 is a readable, typed, modular language for generative dialogue and
+Mecojoni v1 is a readable, typed, modular language for generative dialogue and
 text. It retains the useful core of a weighted context-free grammar—headings
 define rules and list items define alternatives—
 while adding the structure needed for game data, conditions, reuse, localization,
 and reliable long-running generation.
 
-> **Status:** the v2 source-language and compiled-artifact roadmaps are
+> **Status:** the v1 source-language and compiled-artifact roadmaps are
 > feature-complete. Representative native/WASM measurements justified freezing
 > the hostile-input-checked `bytecode/1` format and its single-WASM deployment
 > path. The
@@ -23,10 +23,9 @@ and reliable long-running generation.
 > synchronous host formatter in Rust, Deno, and Chrome. Transactional `diverse/1`, span-aware
 > provenance, repetition audits, replay receipts, and versioned session/history
 > snapshots now run across Rust and WASM. The dependency-free `std` authoring CLI,
-> explicit v1 migration, initial editor grammar, committed v1/native/WASM workloads,
-> and frozen compatibility contracts are also executable. The crates remain
-> unpublished pending the owner's distribution version and license choice. The
-> original proof of concept and its documentation live in [`v1/`](v1/README.md).
+> initial editor grammar, committed native/WASM workloads, and frozen compatibility
+> contracts are also executable. The crates remain unpublished pending the owner's
+> distribution version and license choice.
 > The bytecode design and implementation status are tracked in
 > [`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md); recorded evidence lives in
 > [`BENCHMARKS.md`](BENCHMARKS.md).
@@ -47,15 +46,10 @@ opens it without a content fetch; the generic WASM returns a capability error.
 The Chrome smoke test asserts that the content build requests neither `.meco`
 nor `.mecob` at runtime.
 
-## Why v2?
+## Design goals
 
-The v1 format proves that Markdown headings, list items, references, weights, and
-seeded generation make an approachable grammar format. It deliberately leaves out
-host data, imports, rule parameters, conditions, localization, and a formal
-whitespace model. Those omissions keep a small prototype small, but they become
-limiting as a grammar becomes a game-facing content system.
-
-V2 keeps authored text at the centre. The visible output remains easy to scan:
+Mecojoni keeps authored text at the centre. The visible output remains easy to
+scan:
 
 ```meco
 # greeting
@@ -73,26 +67,6 @@ The additional syntax is reserved for structure that does not itself emit text:
 
 The braces establish eligibility and data; the final line is the complete
 localized message that will be rendered.
-
-## V1 and v2 at a glance
-
-| Area | V1 | V2 design |
-| --- | --- | --- |
-| Source layout | Directives plus Markdown rules | Strict front matter plus Markdown rules |
-| Default target | Required `@start` | Optional root `entry`; otherwise the host chooses an export |
-| References | `@rule` | `@rule`, with `@{rule}` for explicit boundaries and captures |
-| Empty output | `@empty` or `ε` | `""` |
-| Data-dependent weights | Not available | `[weight = expression]` over immutable numeric inputs/parameters; an evaluated zero excludes that production |
-| Literal `@` | `@@` | `\@`, quoted strings, or raw literals |
-| Comments | Whole-line `//` | Markdown comments: `<!-- ... -->` |
-| Inputs and types | Not available | Typed front-matter inputs and finite types |
-| Rule parameters | Not available | `# rule <- value: type` and `@rule <- value: $input` |
-| Conditions | Not available | Non-emitting guards such as `{mood is tense}` |
-| Reuse one generated value | Not available | Emitting captures and non-emitting bindings |
-| Imports and visibility | Not available | Modules, aliases, imports, and explicit exports |
-| Localization | Not available | Complete external messages through `&message` |
-| Sampler configuration | Runtime `random` / `varied` option | Optional `weighted/1` or `diverse/1` authoring default, overridable by the host |
-| Safety and analysis | Reachability/productivity checks | Typed calls, effects, module visibility, iterative limits, traces, audits, and replay-oriented sessions |
 
 ## Build, test, and deploy
 
@@ -178,17 +152,17 @@ file and no separate `.meco` or `.mecob`. See the
 [JavaScript wrapper guide](js/README.md) for ABI ownership and application API
 details.
 
-The syntax in this README is authoritative. `V2_SPECIFICATION.md` must be updated
+The syntax in this README is authoritative. `SPECIFICATION.md` must be updated
 with every syntax change; if the documents temporarily disagree, this README wins.
 
 ## Quick start
 
-V2 source begins with a small, strict front-matter header. This sample has no
+V1 source begins with a small, strict front-matter header. This sample has no
 default entry, so a host must request one of its exported rules explicitly.
 
 ```meco
 ---
-meco: 2
+meco: 1
 module: npc
 sampler: diverse/1
 
@@ -223,16 +197,16 @@ only when the `mood` input is `tense`. The argument values are data, not visible
 text; `&pickup-common` or `&pickup-alert` owns the complete rendered result.
 
 Add `entry: pickup` to a package root when it should have a default generation
-target. V2 never guesses a default from the first rule or the order of `exports`.
+target. V1 never guesses a default from the first rule or the order of `exports`.
 
-## Complete v2 example corpus
+## Complete v1 example corpus
 
-The following source is the canonical v2 syntax corpus. It intentionally places
+The following source is the canonical v1 syntax corpus. It intentionally places
 many independent examples in one file so each form can be reviewed in context.
 
 ```meco
 ---
-meco: 2
+meco: 1
 module: npc
 sampler: diverse/1
 
@@ -456,13 +430,13 @@ exports: [pickup, greeting, warning]
 
 ## The `.meco` format
 
-`.meco` is the canonical v2 source extension used by repository fixtures,
+`.meco` is the canonical v1 source extension used by repository fixtures,
 imports, examples, editor integration, and generated documentation. The portable
 parser still consumes host-supplied source independently of its filename.
 
 ### Front matter, modules, and entries
 
-Every module declares `meco: 2` and a `module` name. The header is a strict
+Every module declares `meco: 1` and a `module` name. The header is a strict
 Mecojoni schema, not general-purpose YAML: unknown or duplicate fields are
 errors, as are YAML tags, anchors, aliases, merges, and implicit values.
 
@@ -492,7 +466,7 @@ imports:
 A `# heading` defines a rule and each `-` item is a weighted alternative. Rule
 references expand inline and emit their result:
 
-Initial v2 identifiers are case-sensitive ASCII; terminal text may contain any
+Initial v1 identifiers are case-sensitive ASCII; terminal text may contain any
 valid UTF-8. Unicode identifiers are deferred so the portable core does not carry
 normalization tables before a real authoring requirement justifies them.
 
@@ -658,7 +632,7 @@ const result = meco.generateWeighted(compiled.value, {
 ```
 
 See [`js/README.md`](js/README.md) and
-[`V2_INTERFACES.md`](V2_INTERFACES.md) for the concrete callback and wire
+[`INTERFACES.md`](INTERFACES.md) for the concrete callback and wire
 contracts.
 
 ### Weights, empty output, and recursion
@@ -752,9 +726,9 @@ Outside literals, Markdown comments are ignored:
 ## Sampling and reproducibility
 
 V1 exposes two runtime modes: independent `random` and repetition-resistant
-`varied`. V2 makes the policy names and versions explicit:
+`varied`. V1 makes the policy names and versions explicit:
 
-| V2 policy | Corresponding v1 behavior | Use |
+| V1 policy | Corresponding v1 behavior | Use |
 | --- | --- | --- |
 | `weighted/1` | `random` | Exact independent weighted CFG draws. |
 | `diverse/1` | `varied` | Stateful repetition resistance for player-facing text. |
@@ -777,7 +751,7 @@ logical-byte caps. These are versioned profile values, not hidden tuning constan
 The default resource profile preserves v1's depth limit of 80 and expansion limit
 of 2,000 per candidate while also bounding output, sampling work, and rendered bytes.
 The complete profile and limit tables are normative in
-[V2_SPECIFICATION.md](V2_SPECIFICATION.md).
+[SPECIFICATION.md](SPECIFICATION.md).
 
 The executable API keeps mutable state explicit. `SamplerSession` owns the parent
 PRNG and call order; `RepetitionStore` owns structural, exact-output, and edge
@@ -868,39 +842,10 @@ because both were placed in global pools. Use weights for intentional world
 texture, keep recursion termination-biased, and use localized messages when the
 sentence must adapt to locale-specific grammar.
 
-## Migration from v1
-
-The `meco migrate` command parses v1 with frozen v1 semantics, then emits explicit
-v2 source. It never silently reinterprets old files:
-
-```sh
-cargo +1.85.0 run -p mecojoni-cli -- \
-  migrate dialogue.meco --write dialogue.meco
-cargo +1.85.0 run -p mecojoni-cli -- check dialogue.meco
-```
-
-| V1 source | V2 migration |
-| --- | --- |
-| `@meco 1` | `---` front matter with `meco: 2` and `module` |
-| `@start greeting` | Optional root `entry: greeting` |
-| `@name` | `@name`, or `@{name}` where a suffix boundary is needed |
-| `@empty` / `ε` as a whole production | `""` |
-| `@@` | `\@` or an appropriate raw/quoted literal |
-| `// comment` | `<!-- comment -->` |
-| Runtime `random` / `varied` | Optional `weighted/1` / `diverse/1` default or host configuration |
-
-Migration must diagnose constructs that cannot be preserved safely without a
-quoted or raw rewrite, especially significant whitespace and newly meaningful
-sigils.
-
-The tool reports that v1/v2 PRNG streams and diversity scoring are intentionally
-not sequence-compatible. See [MIGRATION_V1_TO_V2.md](MIGRATION_V1_TO_V2.md) for
-the exact rewrite and compatibility contract.
-
 ## Authoring CLI and editor grammar
 
 The optional `mecojoni-cli` crate provides `check`, `generate`, `trace`, `lint`,
-`audit`, `manifest`, `migrate`, `fmt`, and `bench`. It recursively resolves imports
+`audit`, `manifest`, `fmt`, and `bench`. It recursively resolves imports
 from an explicit root while the portable core continues to perform no I/O.
 
 ```sh
@@ -932,7 +877,7 @@ forbids unsafe code; the WASM adapter isolates the target allocator.
 JavaScript support targets `wasm32-unknown-unknown` through a dependency-light,
 handwritten linear-memory ABI and JavaScript/TypeScript wrapper for Deno and
 browsers. The WASM adapter supplies its global allocator. A C API is not part of
-the initial v2 scope.
+the initial v1 scope.
 
 The implementation provides a parser with precise spans, an immutable compiled
 representation, typed Rust APIs, deterministic seeded sessions, structured
@@ -949,23 +894,22 @@ WASM interface.
 
 The full rationale, semantic contract, validation plan, localization boundary,
 performance constraints, and implementation phases are in
-[V2_SPECIFICATION.md](V2_SPECIFICATION.md).
+[SPECIFICATION.md](SPECIFICATION.md).
 The formal lexical and strict front-matter grammar is in
-[V2_SYNTAX.md](V2_SYNTAX.md).
+[SYNTAX.md](SYNTAX.md).
 The host package, WASM ownership/handle, JavaScript error, and CLI stream contracts
-are in [V2_INTERFACES.md](V2_INTERFACES.md).
+are in [INTERFACES.md](INTERFACES.md).
 The implementation order and completion gates are tracked in
 [ROADMAP.md](ROADMAP.md).
 
 ## Project structure
 
 ```text
-README.md                    V2 overview and canonical syntax corpus
-V2_SPECIFICATION.md          Detailed v2 specification and implementation plan
-V2_SYNTAX.md                 Normative lexical and complete source grammar
-V2_INTERFACES.md             Package, WASM, JavaScript, and CLI contracts
+README.md                    V1 overview and canonical syntax corpus
+SPECIFICATION.md             Detailed v1 specification and implementation plan
+SYNTAX.md                    Normative lexical and complete source grammar
+INTERFACES.md                Package, WASM, JavaScript, and CLI contracts
 ROADMAP.md                   Phased implementation plan and completion gates
-MIGRATION_V1_TO_V2.md        Frozen v1 reader and honest migration contract
 COMPATIBILITY.md             Frozen language/runtime/ABI compatibility policy
 CONFORMANCE.md               Cross-runtime fixture and release test index
 BENCHMARKS.md                Native/WASM workloads and optimization evidence
@@ -975,7 +919,7 @@ BYTECODE_FORMAT_PLAN.md      Completed compiled-artifact and embedding plan
 Cargo.toml                   Rust 2024 workspace (MSRV 1.85)
 crates/
   mecojoni-benchmarks/       Native operation/allocation workload harness
-  mecojoni-cli/              Optional std authoring and migration CLI
+  mecojoni-cli/              Optional std authoring CLI
   mecojoni-core/             Safe, dependency-free no_std + alloc core
     tests/fixtures/          Filesystem-backed integration corpus
   mecojoni-wasm/             Handwritten WASM ABI and target allocator
@@ -986,11 +930,7 @@ js/
 editors/vscode/              TextMate grammar and editor configuration
 examples/                    Checked single- and multi-module examples
 docs/decisions/              Evidence-backed architecture decisions
-v1/
-  README.md                  Original runnable v1 documentation
-  src/                       V1 compiler, generator, audit, and CLI
-  test/                      V1 tests
-  assets/                    Mecojoni logo
+assets/                      Mecojoni logo
 ```
 
 ## Current limitations
@@ -1016,12 +956,12 @@ bounded exact/edge histories, winner-only commit, and cross-target deterministic
 sequences are executable as well. Stable production IDs, exact output provenance,
 overlap-only structural/rendered audits, copy-on-write snapshots, and replay
 receipts are executable through Rust and the Deno-tested WASM wrapper. The `std`
-CLI, frozen v1 migration, conservative formatter, subprocess contract suite, and
-initial editor grammar are executable as well. Static trace-off weighted rules use
+CLI, conservative formatter, subprocess contract suite, and initial editor grammar
+are executable as well. Static trace-off weighted rules use
 precomputed cumulative indexes, and production-ID collision checks are
 `O(n log n)`; both optimizations have committed native/WASM evidence. A production
 Fluent adapter and compound value records are explicitly deferred extensions, not
-unimplemented v2 release promises. The generic boundary is nevertheless exercised
+unimplemented v1 release promises. The generic boundary is nevertheless exercised
 against real Fluent resources by a Rust-only dev-dependency integration test. See
 [COMPATIBILITY.md](COMPATIBILITY.md),
 [CONFORMANCE.md](CONFORMANCE.md), [RELEASE.md](RELEASE.md), the frozen

@@ -1,4 +1,4 @@
-# Mecojoni v2 benchmark contract
+# Mecojoni v1 benchmark contract
 
 `workloads/1` is a committed, code-generated suite shared by native Rust and
 Deno/WASM. It separates realistic and adversarial shapes:
@@ -30,18 +30,11 @@ Run the equivalent release WASM harness in Deno:
 deno task wasm:bench
 ```
 
-Run the archived v1 JavaScript timing baseline in the same Deno/V8 host:
-
-```sh
-deno task v1:bench
-```
-
 The complete first cross-runtime result is checked in as
 [`benchmarks/results/2026-07-16-darwin-arm64.json`](benchmarks/results/2026-07-16-darwin-arm64.json).
 The file includes all six generated shapes plus the manually authored,
 multi-module Harbor package under [`benchmarks/packages/harbor`](benchmarks/packages/harbor).
-The filename `operations-v1.contract` below means version 1 of the operation
-contract; it is not a benchmark of the Mecojoni v1 language.
+The filename `operations-v1.contract` means version 1 of the operation contract.
 
 The first source-versus-`bytecode/0` Harbor result is recorded separately as
 [`benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json`](benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json).

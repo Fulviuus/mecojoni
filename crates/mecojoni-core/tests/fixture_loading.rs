@@ -305,7 +305,7 @@ fn loads_a_real_meco_file_from_the_filesystem() {
 
     assert_eq!(source.id(), SourceId::new(0));
     assert!(source.name().ends_with("minimal.meco"));
-    assert!(source.text().contains("meco: 2"));
+    assert!(source.text().contains("meco: 1"));
     assert!(source.text().contains("# greeting"));
     let header = parse_front_matter(&source).expect("fixture header parses");
     assert_eq!(header.module().value(), "hello");
@@ -722,7 +722,7 @@ fn canonical_readme_corpus_parses_from_the_filesystem() {
     let readme_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../README.md");
     let readme = fs::read_to_string(readme_path).expect("read root README");
     let section = readme
-        .split_once("## Complete v2 example corpus")
+        .split_once("## Complete v1 example corpus")
         .expect("canonical corpus section")
         .1;
     let source_text = section
@@ -849,7 +849,7 @@ fn canonical_readme_corpus_matches_the_checked_in_ast_prediction() {
     let readme_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../README.md");
     let readme = fs::read_to_string(readme_path).expect("read root README");
     let source_text = readme
-        .split_once("## Complete v2 example corpus")
+        .split_once("## Complete v1 example corpus")
         .expect("canonical corpus section")
         .1
         .split_once("```meco\n")
@@ -977,7 +977,7 @@ fn cli_contract_fixture_covers_every_stream_and_status_class() {
     let contract_path = fixture_path("expected/cli-v1.contract");
     let contract = fs::read_to_string(contract_path).expect("read CLI contract");
     let rows = contract.lines().collect::<Vec<_>>();
-    let interfaces_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../V2_INTERFACES.md");
+    let interfaces_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../INTERFACES.md");
     let interfaces = fs::read_to_string(interfaces_path).expect("read interface contract");
 
     assert_eq!(rows.len(), 7);

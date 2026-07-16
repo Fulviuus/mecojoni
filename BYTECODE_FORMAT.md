@@ -1,6 +1,6 @@
 # Mecojoni `bytecode/1` format
 
-`bytecode/1` is the frozen, little-endian compiled container produced by the v2
+`bytecode/1` is the frozen, little-endian compiled container produced by the v1
 toolchain. Source remains authoritative; `.mecob` is a reproducible deployment
 artifact. The decoder treats every byte as untrusted and constructs no partial
 grammar.
@@ -8,7 +8,7 @@ grammar.
 ## Compatibility
 
 - Magic is `MECB`; container major/minor is `1.0`.
-- The source language is exactly `meco: 2`, core API is `2`, and the current
+- The source language is exactly `meco: 1`, core API is `2`, and the current
   lowered contract is `lowered-ir/1`.
 - The 16-byte runtime fingerprint is `meco-bc1-0000001`. A runtime accepts only
   that fingerprint. Compatible implementations preserve it; an incompatible

@@ -1,5 +1,5 @@
 ---
-meco: 2
+meco: 1
 module: fixture
 imports:
   common: "./common.meco"

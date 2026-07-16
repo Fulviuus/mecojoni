@@ -357,7 +357,7 @@ mod tests {
             SourceId::new(0),
             "audit.meco",
             concat!(
-                "---\nmeco: 2\nmodule: audit\n---\n",
+                "---\nmeco: 1\nmodule: audit\n---\n",
                 "# shell\n- The old pilot waited quietly.\n",
                 "# message\n- &localized <- name: $name\n",
             ),
@@ -377,7 +377,7 @@ mod tests {
             SourceId::new(0),
             "repetition.meco",
             concat!(
-                "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n",
+                "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n",
                 "# line\n- [weight = 1, id = shell] @opening @suffix\n",
                 "# opening\n- [weight = 1, id = opening] Fixed opening words\n",
                 "# suffix\n- [weight = 1, id = alpha] alpha\n",

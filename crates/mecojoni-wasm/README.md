@@ -53,5 +53,5 @@ deno task wasm:embedded:test
 deno task wasm:embedded:browser:test
 ```
 
-See [`V2_INTERFACES.md`](../../V2_INTERFACES.md) for operation numbers, payload
+See [`INTERFACES.md`](../../INTERFACES.md) for operation numbers, payload
 ownership, snapshots, and the additive ABI compatibility policy.

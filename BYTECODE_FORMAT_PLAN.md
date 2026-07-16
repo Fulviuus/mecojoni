@@ -28,7 +28,7 @@ virtual machine.
 ## Non-goals
 
 - Bytecode is not an authoring format and has no handwritten syntax.
-- It does not replace `.meco` source, the source compiler, or migration tooling.
+- It does not replace `.meco` source or the source compiler.
 - It does not serialize sampler sessions, repetition histories, or replay bundles;
   `snapshot/1` remains responsible for mutable state.
 - It does not embed formatter implementations or translation catalogs. It stores
@@ -38,7 +38,7 @@ virtual machine.
   discriminants as an interchange format.
 - The first version does not promise streaming execution, memory mapping, or
   in-place patching.
-- Format-1 Mecojoni files must be migrated to source format 2 before compilation.
+- `meco: 1` is the source format accepted by the initial compiler.
 
 ## Recommended delivery model
 
@@ -614,7 +614,7 @@ documented unsupported-feature diagnostic; malformed artifacts fail safely.
 - Add debug profile behavior and capability diagnostics.
 - Run native, `thumbv6m-none-eabi`, and WASM checks.
 
-**Exit:** the entire current v2 semantic corpus is source/bytecode equivalent.
+**Exit:** the entire current v1 semantic corpus is source/bytecode equivalent.
 
 ### Milestone B4 — Add tooling and external WASM loading
 

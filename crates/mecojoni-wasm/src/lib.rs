@@ -1518,7 +1518,7 @@ mod tests {
 
     fn package_request() -> Vec<u8> {
         let source = concat!(
-            "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
+            "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n\n",
             "# line\n- hello\n",
         );
         let mut encoder = Encoder::new();
@@ -1542,7 +1542,7 @@ mod tests {
 
     fn localized_package_request() -> Vec<u8> {
         let source = concat!(
-            "---\nmeco: 2\nmodule: root\nentry: arrival\n",
+            "---\nmeco: 1\nmodule: root\nentry: arrival\n",
             "inputs:\n  itemCount: number\nexports: [arrival]\n---\n\n",
             "# arrival\n- &arrival <- hero: \"Ada\", count: $itemCount\n",
         );
@@ -1694,7 +1694,7 @@ mod tests {
                 source: mecojoni_core::SourceFile::new(
                     mecojoni_core::SourceId::new(0),
                     "root.meco",
-                    "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
+                    "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
                 ),
                 resolved_imports: vec![],
             }],

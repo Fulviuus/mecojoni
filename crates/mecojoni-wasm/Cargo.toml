@@ -1,6 +1,6 @@
 [package]
 name = "mecojoni-wasm"
-description = "Handwritten WebAssembly ABI for Mecojoni v2"
+description = "Handwritten WebAssembly ABI for Mecojoni v1"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

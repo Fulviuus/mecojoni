@@ -71,4 +71,4 @@ pub use span::{SourceId, SourcePosition, Span, SpanError, Spanned};
 pub use value::{BindingTrace, DataBinding, EligibleWeightTrace, SelectionTrace, Value};
 
 /// Version of the public Rust API under active development.
-pub const API_VERSION: u32 = 2;
+pub const API_VERSION: u32 = 1;

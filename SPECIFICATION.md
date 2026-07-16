@@ -1,19 +1,19 @@
-# Mecojoni v2 Specification and Runtime Design
+# Mecojoni v1 Specification and Runtime Design
 
-> This document is the implemented v2 design; explicitly deferred extensions are
+> This document is the implemented v1 design; explicitly deferred extensions are
 > labeled as such. The portable workspace, complete recovering source parser, immutable
 > package compiler, iterative `weighted/1` generator, deterministic primitives,
 > typed request/guard/binding runtime, complete-message formatter boundary,
 > transactional `diverse/1` sessions and histories, stable provenance, overlap-only
 > audits, replay receipts, copy-on-write snapshots, package boundary, handwritten
-> WASM ABI, Deno/browser wrapper, dependency-free `std` CLI, frozen v1 migration,
+> WASM ABI, Deno/browser wrapper, dependency-free `std` CLI,
 > conservative formatter, initial editor grammar, committed native/WASM workloads,
 > frozen `bytecode/1` source/external/embedded loading, and compatibility/release
 > contracts are implemented. Completion evidence is
 > tracked in `ROADMAP.md`, `BENCHMARKS.md`, and `CONFORMANCE.md`.
 
-The syntax in `README.md` is authoritative. `V2_SYNTAX.md` is its formal lexical
-companion and `V2_INTERFACES.md` freezes host boundaries. Any syntax change must
+The syntax in `README.md` is authoritative. `SYNTAX.md` is its formal lexical
+companion and `INTERFACES.md` freezes host boundaries. Any syntax change must
 update all affected documents in the same change; if they temporarily conflict,
 the README wins.
 
@@ -72,7 +72,7 @@ that genuinely require open-ended generation.
 
 ## Design constraints learned from v1
 
-The existing prototype establishes several constraints for the v2 design:
+The existing prototype establishes several constraints for the v1 design:
 
 - Candidate-state pollution is certain from the implementation. An exact `28.1%`
   repeat figure depends on an uncommitted fixture and was not independently
@@ -135,7 +135,7 @@ The design becomes much simpler when every kind of state has one owner.
 - a home-grown CLDR database or universal morphology engine;
 - automatic inflection of arbitrary player names;
 - unrestricted fragment-by-fragment localization;
-- a C API or C ABI in the initial v2 implementation;
+- a C API or C ABI in the initial v1 implementation;
 - LLM-style open-ended generation.
 
 ### Implementation targets and dependency policy
@@ -156,7 +156,7 @@ The initial workspace has two product crates:
   TypeScript wrapper for browsers and Deno.
 
 An optional `std` CLI/tooling crate may be added after the core API stabilizes. A
-C adapter is not part of v2 scope. The core should begin with no third-party
+C adapter is not part of v1 scope. The core should begin with no third-party
 dependencies; a dependency is accepted only when its safety, maintenance, or
 standards value clearly exceeds the portability and audit cost. Unsafe Rust is
 forbidden in the core and isolated to reviewed ABI code where it is unavoidable.
@@ -226,7 +226,7 @@ and types must explicitly prohibit source templating of host values.
 The package model provides:
 
 - a Markdown-style front-matter header in every source module, with the same exact
-  integer `meco: 2` value and package-wide version mismatches rejected;
+  integer `meco: 1` value and package-wide version mismatches rejected;
 - one declared module name per file;
 - canonical rule names of the form `<module>.<rule>`; in the example, module
   `npc` plus rule `pickup` is `npc.pickup`;
@@ -356,14 +356,14 @@ is no silent compare-and-swap retry against changed history.
 
 ## Language design
 
-The following author-facing syntax records the current format-2 proposal and the
+The following author-facing syntax records the current format-1 proposal and the
 examples agreed during review. The implemented grammar is formalized in
-`V2_SYNTAX.md` and checked against the README corpus plus parser-independent valid,
+`SYNTAX.md` and checked against the README corpus plus parser-independent valid,
 invalid, exact-diagnostic, and AST fixtures.
 
 ```meco
 ---
-meco: 2
+meco: 1
 module: npc
 sampler: diverse/1
 
@@ -468,7 +468,7 @@ export all three instead.
   chomping rules while disabling interpolation and references.
 - Double-quoted segments interpret the normative escape table without emitting the
   quotes; `r"..."` is the single-line raw literal form. Their delimiters and escape
-  behavior are part of the format-2 conformance corpus.
+  behavior are part of the format-1 conformance corpus.
 - The escape table is normative and includes at least `\\`, `\"`, `\n`, `\r`,
   `\t`, `\@`, `\$`, `\&`, and `\//`. Unknown escapes are errors.
 - `<!-- ... -->` is a non-nestable Markdown comment outside quoted or raw
@@ -490,7 +490,7 @@ export all three instead.
 - Byte-oriented APIs require valid UTF-8; malformed byte sequences are
   errors. A JavaScript string API likewise rejects unpaired UTF-16 surrogates
   instead of silently replacing them. Physical line endings are normalized, but
-  terminal text is otherwise preserved exactly. The initial v2 implementation
+  terminal text is otherwise preserved exactly. The initial v1 implementation
   uses case-sensitive ASCII identifiers and unrestricted UTF-8 terminal text.
   Unicode identifiers and normalization are deferred until a real authoring need
   justifies their tables or dependency cost.
@@ -660,7 +660,7 @@ normative precedence. Guard context uses bare input and parameter names, so
 `tense`; output interpolation and call arguments retain their explicit value
 forms. Multiple true guards intentionally leave multiple weighted productions
 eligible. Selection is ordinary weighted/diverse choice over that set; there is no
-separate core `select` expression in format 2. Formatter-owned messages provide
+separate core `select` expression in format 1. Formatter-owned messages provide
 linguistic plural/select behavior. The core has no assignment, loops, dynamic rule
 dispatch, reflection, I/O, or arbitrary callbacks.
 
@@ -984,13 +984,11 @@ resolution. Both concerns are valid, so the design keeps two explicit layers:
   for fallback reporting.
 
 A catalog or formatter-environment change therefore opens a new rendered-history
-namespace unless an explicit migration tool rewrites the old state; incompatible
-text regimes are never mixed silently.
+namespace; incompatible text regimes are never mixed silently.
 
 Structural cooldown is likewise namespaced by grammar artifact, production-ID
-schema, and sampler version. Loading edited grammar against old state either uses
-an explicit ID-aware migration or starts a new namespace; stale rule IDs never
-silently influence selection.
+schema, and sampler version. Loading edited grammar against old state starts a
+new namespace; stale rule IDs never silently influence selection.
 
 Structural-only mode is cheaper and stable across translations. Rendered mode
 formats candidates before selection and catches two different IDs that produce the
@@ -1186,7 +1184,7 @@ scalar is a word scalar except the explicitly pinned separator/punctuation range
 `U+FF1A–U+FF20`, `U+FF3B–U+FF40`, and `U+FF5B–U+FF65`. A word is a maximal
 run of word scalars. This deliberately simple classification is independent of
 changing host Unicode tables; improving it requires a new tokenizer/profile
-version and replay-visible migration.
+version and explicit replay metadata.
 
 Useful lints include:
 
@@ -1290,7 +1288,7 @@ The CLI has two output modes: `text` (the default) and `jsonl`. In `text` mode,
 `meco generate` writes each returned generated text value followed by exactly one
 line-feed to standard output. It is human display output, not a lossless record
 format for multiple multiline results. `--trace` writes tree traces and metrics
-only to standard error. `check`, `lint`, `audit`, `manifest`, `migrate`, and `bench`
+only to standard error. `check`, `lint`, `audit`, `manifest`, `fmt`, and `bench`
 write their primary human-readable report to standard output and all diagnostics to
 standard error. In `jsonl` mode, each successful result or report is one stable JSON
 object on standard output; requested trace data is embedded in the corresponding
@@ -1310,7 +1308,6 @@ The CLI is an author/build tool, not a per-line game API:
 - `meco generate` / `meco trace` — deterministic samples and derivation traces;
 - `meco audit` — structural/rendered repetition reports over generated text;
 - `meco manifest` — stable message/input schema export;
-- `meco migrate` — frozen-reader v1-to-v2 source migration with compatibility notes;
 - `meco fmt` — conservative semantics-preserving source validation/formatting;
 - `meco bench` — representative local workload profiles.
 
@@ -1394,7 +1391,7 @@ using a warm session.
 | Source is the only specification | Normative EBNF/lexical spec and parser-independent fixtures | A second parser can pass the same conformance corpus |
 | Owned bytecode increases format and decoder surface; streaming is absent | Keep source authoritative; freeze only the measured owned format and pass source compilation/artifact decoding through the immutable `lowered-ir/1` invariant boundary | [`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md), semantic golden contracts, hostile-input suites, and recorded cross-runtime evidence |
 
-Frozen `bytecode/1` preserves the complete v2 runtime contract, including
+Frozen `bytecode/1` preserves the complete v1 runtime contract, including
 dynamic expressions, bindings, messages, provenance, diverse state, snapshots,
 and replay identity. Its normative container layout and compatibility policy live in
 [`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md) and
@@ -1530,38 +1527,7 @@ percentage from a pinned baseline. Cross-platform gates use operation counts or
 asymptotic ratios where wall-time comparison is not meaningful; no universal
 absolute memory or throughput promise is inferred from one machine.
 
-## Migration from the proof of concept
-
-A greenfield design still needs an honest path for existing `.meco` files:
-
-- Freeze the current parser as the legacy format-1 reader. Do not make it silently
-  adopt new brace, comment, escape, or whitespace meanings.
-- Provide `meco migrate` that parses with format-1 semantics and emits format 2.
-  It synthesizes canonical front matter, maps legacy `@start` to an optional root
-  `entry`,
-  obtains a stable module name from an explicit option or diagnosed filename rule,
-  and records the chosen `weighted/1` or `diverse/1` policy. Significant whitespace
-  becomes quoted text, `@@` becomes the new literal escape, `ε` or a whole
-  `@empty` body becomes `""`, legacy rule references use the compact form where
-  unambiguous (or braces at a suffix boundary), and every legacy production is
-  rendered in the arrowless production layout.
-- An inline legacy `@empty` is removed from the parsed output sequence with a
-  migration warning; if that makes the whole body empty, the converter emits
-  `""`. Diagnose constructs that cannot be converted safely, including malformed
-  weight-looking prose, reliance on literal escape spellings, or text containing
-  `$`, message-reference, quote, comment, or block markers that cannot be preserved
-  without an explicit quoted/raw rewrite.
-- Preserve stable authored production/message IDs when available. When absent, let
-  the format-2 compiler derive artifact-local IDs unless the user explicitly asks
-  the migration tool to materialize them.
-- Compare deterministic corpora before and after migration, but do not promise the
-  same seeded sequence across sampler versions. Record the deliberate break in a
-  migration report.
-- Keep migration separate from compilation. A format-1 file is either handled by
-  the frozen legacy runtime or converted explicitly; it is never reinterpreted by
-  format 2 heuristics.
-
-## Implementation sequence
+ ## Implementation sequence
 
 ### Phase 0 — Decide the product and freeze the contracts
 
@@ -1640,7 +1606,7 @@ until feature records are implemented.
 - Profile representative applications on target platforms.
 - Consider dynamic indexed selection, serialized artifacts, streaming, or other
   optimizer work only when a measured requirement justifies it.
-- Stabilize the package/API only after compatibility and migration tests exist.
+- Stabilize the package/API only after compatibility tests exist.
 
 **Exit:** every optimization has a workload, before/after measurement, memory
 impact, and deterministic-compatibility decision.

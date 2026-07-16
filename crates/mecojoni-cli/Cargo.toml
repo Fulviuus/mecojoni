@@ -1,6 +1,6 @@
 [package]
 name = "mecojoni-cli"
-description = "Dependency-free std authoring and migration tools for Mecojoni v2"
+description = "Dependency-free std authoring tools for Mecojoni v1"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

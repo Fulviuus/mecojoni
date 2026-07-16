@@ -1555,7 +1555,7 @@ mod tests {
         let source = SourceFile::new(
             SourceId::new(0),
             "busy.meco",
-            "---\nmeco: 2\nmodule: busy\nentry: line\nexports: [line]\n---\n# line\n- ok\n",
+            "---\nmeco: 1\nmodule: busy\nentry: line\nexports: [line]\n---\n# line\n- ok\n",
         );
         let grammar = compile_package(&PackageInput {
             root_id: "root".to_string(),
@@ -1587,7 +1587,7 @@ mod tests {
             SourceId::new(0),
             "snapshot.meco",
             concat!(
-                "---\nmeco: 2\nmodule: snapshot\nentry: line\nexports: [line]\n---\n",
+                "---\nmeco: 1\nmodule: snapshot\nentry: line\nexports: [line]\n---\n",
                 "# line\n- Alpha signal.\n- Beta signal.\n- Gamma signal.\n",
             ),
         );

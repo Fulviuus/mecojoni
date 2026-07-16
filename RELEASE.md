@@ -1,4 +1,4 @@
-# Mecojoni v2 release gate
+# Mecojoni v1 release gate
 
 The implementation is feature-complete against `ROADMAP.md`. Before an actual
 distribution, run the commands in `CONFORMANCE.md` and verify:
@@ -12,8 +12,7 @@ distribution, run the commands in `CONFORMANCE.md` and verify:
 - `BYTECODE_FORMAT.md` matches golden artifacts and the exact runtime fingerprint;
 - native benchmark changes include before/after evidence and WASM has zero live
   ABI allocations/handles after disposal;
-- migration notes report rather than hide v1 seed/sampler differences;
-- README, specifications, interface contract, migration, conformance, and
+- README, specifications, interface contract, conformance, and
   benchmark documents agree.
 
 The repository intentionally does not invent a license. Cargo publication remains

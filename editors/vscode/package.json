@@ -1,7 +1,7 @@
 {
   "name": "mecojoni-language",
   "displayName": "Mecojoni Language",
-  "description": "Syntax highlighting and editor defaults for Mecojoni v2",
+  "description": "Syntax highlighting and editor defaults for Mecojoni v1",
   "version": "0.0.0",
   "engines": {
     "vscode": "^1.85.0"

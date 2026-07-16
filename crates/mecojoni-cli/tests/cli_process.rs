@@ -1,5 +1,4 @@
 use std::{
-    collections::BTreeSet,
     fs,
     path::PathBuf,
     process::{Command, Output},
@@ -23,7 +22,7 @@ fn text(bytes: &[u8]) -> &str {
 }
 
 fn root() -> PathBuf {
-    fixture("v2/root.meco")
+    fixture("packages/root.meco")
 }
 
 fn root_string() -> String {
@@ -33,7 +32,6 @@ fn root_string() -> String {
 #[test]
 fn every_authoring_command_runs_against_real_filesystem_sources() {
     let root = root_string();
-    let v1 = fixture("v1/dialogue.meco");
     let commands: &[&[&str]] = &[
         &["check", &root],
         &["generate", &root, "--data", "playerName=Rin"],
@@ -43,7 +41,6 @@ fn every_authoring_command_runs_against_real_filesystem_sources() {
         &["manifest", &root],
         &["bench", &root, "--count", "4", "--data", "playerName=Rin"],
         &["fmt", &root],
-        &["migrate", v1.to_str().unwrap()],
     ];
     for arguments in commands {
         let output = meco(arguments);
@@ -107,7 +104,7 @@ fn every_defined_exit_status_and_no_partial_success_are_exercised() {
     let success = meco(&["check", &root]);
     assert_eq!(success.status.code(), Some(0));
 
-    let domain = meco(&["check", fixture("v2/invalid.meco").to_str().unwrap()]);
+    let domain = meco(&["check", fixture("packages/invalid.meco").to_str().unwrap()]);
     assert_eq!(domain.status.code(), Some(1));
     assert!(domain.stdout.is_empty());
     assert!(text(&domain.stderr).contains("E_UNDEFINED_RULE"));
@@ -162,56 +159,6 @@ fn formatter_is_byte_stable_and_generation_semantics_are_unchanged() {
 }
 
 #[test]
-fn real_v1_corpus_migrates_compiles_and_reports_honest_differences() {
-    let source = fixture("v1/dialogue.meco");
-    let migrated = temp_path("dialogue.meco");
-    let migration = meco(&[
-        "migrate",
-        source.to_str().unwrap(),
-        "--write",
-        migrated.to_str().unwrap(),
-    ]);
-    assert_eq!(migration.status.code(), Some(0));
-    let notices = text(&migration.stderr);
-    assert!(notices.contains("M_COMMENT_REWRITE"));
-    assert!(notices.contains("M_AMBIGUOUS_WHITESPACE"));
-    assert!(notices.contains("M_EMPTY_REWRITE"));
-    assert!(notices.contains("M_SIGIL_REWRITE"));
-    assert!(notices.contains("M_WEIGHT_LOOKING_PROSE"));
-    assert!(notices.contains("M_BEHAVIOR_CHANGE"));
-
-    let checked = meco(&["check", migrated.to_str().unwrap()]);
-    assert_eq!(checked.status.code(), Some(0), "{}", text(&checked.stderr));
-
-    let mut observed = BTreeSet::new();
-    for seed in 0..64_u64 {
-        let output = meco(&[
-            "generate",
-            migrated.to_str().unwrap(),
-            "--seed",
-            &seed.to_string(),
-        ]);
-        assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
-        observed.insert(text(&output.stdout).trim_end_matches('\n').to_string());
-    }
-    let expected = BTreeSet::from([
-        String::new(),
-        "Hello, Ada!".to_string(),
-        "Hello, Tomas!".to_string(),
-        "Contact Ada@example.invalid for $5 & tea.".to_string(),
-        "Contact Tomas@example.invalid for $5 & tea.".to_string(),
-        "spaced".to_string(),
-        "[status] ready".to_string(),
-    ]);
-    assert!(observed.is_subset(&expected));
-    assert!(
-        observed.len() >= 6,
-        "seed corpus did not cover migrated alternatives"
-    );
-    let _ = fs::remove_file(migrated);
-}
-
-#[test]
 fn jsonl_reports_and_duplicate_scalar_flags_are_stable() {
     let root = root_string();
     for command in ["check", "lint", "audit", "manifest", "bench"] {
@@ -233,23 +180,11 @@ fn jsonl_reports_and_duplicate_scalar_flags_are_stable() {
             "{command} JSONL leaked diagnostics"
         );
     }
-    for (command, source) in [
-        ("fmt", fixture("v2/root.meco")),
-        ("migrate", fixture("v1/dialogue.meco")),
-    ] {
-        let output = meco(&[command, source.to_str().unwrap(), "--output=jsonl"]);
-        assert_eq!(
-            output.status.code(),
-            Some(0),
-            "{command}: {}",
-            text(&output.stderr)
-        );
-        assert_eq!(text(&output.stdout).lines().count(), 1);
-        assert!(
-            output.stderr.is_empty(),
-            "{command} JSONL leaked diagnostics"
-        );
-    }
+    let source = fixture("packages/root.meco");
+    let output = meco(&["fmt", source.to_str().unwrap(), "--output=jsonl"]);
+    assert_eq!(output.status.code(), Some(0), "fmt: {}", text(&output.stderr));
+    assert_eq!(text(&output.stdout).lines().count(), 1);
+    assert!(output.stderr.is_empty(), "fmt JSONL leaked diagnostics");
     let duplicate = meco(&["check", &root, "--output=text", "--output", "jsonl"]);
     assert_eq!(duplicate.status.code(), Some(2));
     assert!(duplicate.stdout.is_empty());

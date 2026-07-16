@@ -1,6 +1,6 @@
 [package]
 name = "mecojoni-benchmarks"
-description = "Committed native workload and allocation measurements for Mecojoni v2"
+description = "Committed native workload and allocation measurements for Mecojoni v1"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

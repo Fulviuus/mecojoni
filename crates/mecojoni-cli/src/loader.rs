@@ -24,7 +24,7 @@ struct RawModule {
     imports: Vec<(String, PathBuf)>,
 }
 
-/// Resolves a v2 package from one explicit root. All I/O stays in this `std` crate.
+/// Resolves a v1 package from one explicit root. All I/O stays in this `std` crate.
 pub(crate) fn load_package(root: &Path) -> CliResult<LoadedPackage> {
     let root = canonical_file(root)?;
     let mut pending = vec![root.clone()];

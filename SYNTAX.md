@@ -1,4 +1,4 @@
-# Mecojoni v2 Lexical and Source Grammar
+# Mecojoni v1 Lexical and Source Grammar
 
 This is the formal companion to the canonical source corpus in `README.md`.
 The README remains authoritative for author-facing syntax. This document makes
@@ -66,7 +66,7 @@ top-field        = version-field
                  | sampler-field
                  | exports-field ;
 
-version-field    = "meco:", space, "2", newline ;
+version-field    = "meco:", space, "1", newline ;
 module-field     = "module:", space, identifier, newline ;
 entry-field      = "entry:", space, identifier, newline ;
 sampler-field    = "sampler:", space,
@@ -97,7 +97,7 @@ items, and variants within one finite type are unique.
 Unknown fields are errors. The header is deliberately not YAML: tags, anchors,
 aliases, merge keys, block scalars, flow mappings, comments, implicit typing, and
 coercion are not recognized. In particular, only the unquoted token `2` is a
-format version; `2.0`, `"2"`, `02`, and `+2` are invalid.
+format version; `1.0`, `"1"`, `01`, and `+1` are invalid.
 
 Every module declares `meco` and `module`. Package validation later enforces that
 `entry` and `sampler` are root-only, every entry is exported, imports resolve, and
@@ -308,7 +308,7 @@ The initial header parser exposes these codes:
 | `E_HEADER_UNTERMINATED` | The closing delimiter is missing. |
 | `E_HEADER_SYNTAX` | A mapping line does not use the exact header grammar. |
 | `E_HEADER_INDENT` | Tabs or incorrect nested indentation were used. |
-| `E_HEADER_UNKNOWN_FIELD` | A top-level field is not part of format 2. |
+| `E_HEADER_UNKNOWN_FIELD` | A top-level field is not part of format 1. |
 | `E_HEADER_DUPLICATE_FIELD` | A field, declaration, variant, or list item repeats. |
 | `E_HEADER_REQUIRED_FIELD` | `meco` or `module` is absent. |
 | `E_HEADER_VALUE` | A known field has the wrong value shape. |

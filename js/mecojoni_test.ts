@@ -148,7 +148,7 @@ const milestone8Manifest: MessageManifest = {
 Deno.test("Deno compiles and generates the native weighted seed corpus", async () => {
   const meco = await instantiate();
   assertEquals(meco.abiVersion, 1);
-  assertEquals(meco.coreApiVersion, 2);
+  assertEquals(meco.coreApiVersion, 1);
   const compiled = meco.compilePackage(await weightedPackage());
   assert(compiled.ok, compiled.ok ? "" : compiled.error.message);
   try {

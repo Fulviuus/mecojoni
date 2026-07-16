@@ -1,4 +1,4 @@
-# Mecojoni v2 conformance suite
+# Mecojoni v1 conformance suite
 
 The source specification is backed by parser-independent files and cross-runtime
 contracts rather than snapshots of implementation internals.
@@ -11,7 +11,6 @@ contracts rather than snapshots of implementation internals.
 | Fluent formatter composition | `crates/mecojoni-core/tests/fluent_integration.rs` plus `crates/mecojoni-core/tests/fixtures/packages/fluent/` | Real `.ftl` resources receive typed Mecojoni arguments and prove English/Italian plurals, gender selects, explicit fallback, provenance, and default bidi isolation. |
 | Numeric/PRNG/profile vectors | `crates/mecojoni-core/tests/fixtures/expected/` | Exact cross-runtime values and policy constants. |
 | CLI process contract | `crates/mecojoni-cli/tests/` | Every command, stream, JSONL record, flag form, and status. |
-| v1 migration | `crates/mecojoni-cli/tests/fixtures/v1/` | Frozen reader, hazard diagnostics, compilable rewrite, honest output-set comparison. |
 | Workload operations | `crates/mecojoni-benchmarks/baselines/` | Native/WASM source, artifact, expansion, sampler, text, and leak checks. |
 | JavaScript/WASM | `js/*_test.ts` | The identical artifact through Deno and headless Chrome. |
 

@@ -177,7 +177,7 @@ pub fn encode_artifact(grammar: &CompiledGrammar, options: ArtifactOptions) -> M
     writer.u32(options.debug_profile.flag());
     writer.u64(total);
     writer.u32(1);
-    writer.u32(2);
+    writer.u32(1);
     writer.u32(crate::API_VERSION);
     writer.u32(0);
     writer.u64(grammar.artifact_hash());
@@ -306,7 +306,7 @@ fn validate_container(bytes: &[u8]) -> MecoResult<Header> {
     }
     if u32_at(8) != HEADER_BYTES
         || u32_at(24) != 1
-        || u32_at(28) != 2
+        || u32_at(28) != 1
         || u32_at(32) != crate::API_VERSION
         || u32_at(36) != 0
         || bytes.get(56..72) != Some(RUNTIME_FINGERPRINT.as_slice())
@@ -1293,7 +1293,7 @@ mod tests {
                 source: SourceFile::new(
                     SourceId::new(0),
                     "tiny.meco",
-                    "---\nmeco: 2\nmodule: tiny\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
+                    "---\nmeco: 1\nmodule: tiny\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
                 ),
                 resolved_imports: vec![],
             }],

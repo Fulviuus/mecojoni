@@ -1,15 +1,15 @@
-# Mecojoni v2 Roadmap
+# Mecojoni v1 Roadmap
 
 This roadmap turns the language in `README.md` and the runtime design in
-`V2_SPECIFICATION.md` into testable implementation milestones. The README is the
+`SPECIFICATION.md` into testable implementation milestones. The README is the
 authoritative syntax source. A syntax change is incomplete until the README,
 specification, fixtures, and parser tests agree.
 
 The original source-language milestones below are complete. The active compiled
 artifact milestones B0–B6, including their exit gates, are defined in
 [`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md). B0 is complete: the
-repository records archived v1 JS, v2 native Rust, and v2 WASM/Deno evidence plus
-a manually authored multi-module package and a single-WASM deployment budget.
+repository records native Rust and WASM/Deno evidence plus a manually authored
+multi-module package and a single-WASM deployment budget.
 B1–B6 are now also complete, and the evidence-backed result is the frozen
 [`bytecode/1` format](BYTECODE_FORMAT.md).
 
@@ -146,7 +146,7 @@ Deno, and a browser, with equivalent structured diagnostics.
 
 ## Milestone 5 — Types, guards, parameters, captures, and bindings
 
-Implement the v2 authoring features that solve v1's main composition limits.
+Implement the v1 authoring features that solve v1's main composition limits.
 
 - [x] Implement core scalar types, finite enums, immutable request data, and
   runtime type validation.
@@ -239,18 +239,14 @@ Make generated text explainable and state reproducible.
 **Exit gate:** awkward output can be traced to its actual visible emitters, audits
 do not blame unrelated deep rules, and snapshot restore reproduces the next output.
 
-## Milestone 9 — Authoring tools and v1 migration
+## Milestone 9 — Authoring tools
 
 Build tools only after the core contracts are stable.
 
 - [x] Add an optional `std` CLI crate for check, generate, trace, lint, manifest,
-  audit, migrate, and bench workflows.
+  audit, fmt, and bench workflows.
 - [x] Keep filesystem and process behavior outside `mecojoni-core`.
 - [x] Implement a source formatter proven not to alter output semantics.
-- [x] Freeze a v1 reader and implement explicit v1-to-v2 migration.
-- [x] Produce migration diagnostics for ambiguous whitespace, sigils, empty text,
-  comments, and weight-looking prose.
-- [x] Add subprocess tests and real v1/v2 corpus comparisons.
 - [x] Test text versus JSONL output, stdout/stderr separation, all defined exit
   statuses, and warning-failure thresholds.
 - [x] Add initial editor grammar and language-server support if demanded by real
@@ -260,8 +256,8 @@ The checked-in TextMate grammar covers current lexical use. Semantic editor
 diagnostics invoke `meco check`; no real authoring requirement yet justifies a
 separate incremental LSP transport or a duplicate parser.
 
-**Exit gate:** checked-in v1 projects migrate explicitly, generated differences
-are reported honestly, and every CLI command has filesystem integration tests.
+**Exit gate:** every CLI command has filesystem integration tests and stable
+stream/status behavior.
 
 ## Milestone 10 — Optimization and stabilization
 
@@ -276,7 +272,7 @@ Optimize only measured workloads and prepare a stable release.
 - [x] Decide whether compiled artifact serialization is needed.
 - [x] Freeze language, sampler, ABI, snapshot, and diagnostic compatibility rules.
 - [x] Publish Rust API documentation, JavaScript/TypeScript documentation,
-  conformance fixtures, examples, and migration guidance.
+  conformance fixtures, examples, and compatibility guidance.
 
 `workloads/1` freezes six native/WASM operation contracts and measures native
 allocations plus WASM linear memory, handles, and host-visible allocations. The
@@ -292,7 +288,7 @@ evidence and stable-release gates.
 
 **Exit gate:** every retained optimization has before/after evidence, all public
 compatibility contracts are versioned, and the release gate in
-`V2_SPECIFICATION.md` is satisfied.
+`SPECIFICATION.md` is satisfied.
 
 ## Deferred ideas
 
