@@ -160,3 +160,59 @@ console.log(JSON.stringify({
   liveAllocations: 0,
   liveAllocationBytes: 0,
 }));
+
+const harborArtifact = await Deno.readFile(
+  new URL("../benchmarks/artifacts/harbor.mecob", import.meta.url),
+);
+const harborLoadMs: number[] = [];
+const harborArtifactGenerationMs: number[] = [];
+let harborArtifactEvidence: Record<string, number> | undefined;
+for (let sample = 0; sample < samples; sample++) {
+  const meco = await Mecojoni.instantiate(wasm);
+  const memoryBefore = meco.linearMemoryBytes;
+  const started = performance.now();
+  const loaded = meco.loadArtifact(harborArtifact);
+  if (!loaded.ok) throw new Error(`harbor artifact: ${loaded.error.message}`);
+  harborLoadMs.push(performance.now() - started);
+  const memoryAfterLoad = meco.linearMemoryBytes;
+  const generationStarted = performance.now();
+  const result = meco.generateWeighted(loaded.value, {
+    entry: "harbor.scene",
+    seed: 0n,
+    limits: workloadLimits,
+    data: {
+      visitor: { kind: "text", value: "Rin" },
+      mood: { kind: "enum", value: "tense" },
+      urgency: { kind: "number", numerator: 1n, denominator: 1n },
+    },
+  });
+  harborArtifactGenerationMs.push(performance.now() - generationStarted);
+  if (!result.ok) throw new Error(`harbor artifact: ${result.error.message}`);
+  loaded.value.dispose();
+  if (meco.liveHandleCount !== 0 || meco.liveAllocationCount !== 0) {
+    throw new Error("harbor artifact: WASM benchmark leaked host resources");
+  }
+  harborArtifactEvidence ??= {
+    expansions: result.value.expansions,
+    samplerWords: result.value.samplerWords,
+    outputBytes: encoder.encode(result.value.text).byteLength,
+    memoryBefore,
+    memoryAfterLoad,
+    memoryAfterDispose: meco.linearMemoryBytes,
+  };
+}
+console.log(JSON.stringify({
+  engine: "v2-wasm-bytecode",
+  version: "startup/1",
+  scenario: "harbor-dialogue",
+  class: "representative",
+  samples,
+  artifactBytes: harborArtifact.byteLength,
+  generations: 1,
+  loadMsMedian: median(harborLoadMs),
+  generationMsMedian: median(harborArtifactGenerationMs),
+  ...harborArtifactEvidence,
+  liveHandles: 0,
+  liveAllocations: 0,
+  liveAllocationBytes: 0,
+}));

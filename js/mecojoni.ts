@@ -11,6 +11,8 @@ const OP_SESSION_SNAPSHOT_EXPORT = 10;
 const OP_SESSION_SNAPSHOT_IMPORT = 11;
 const OP_REPETITION_SNAPSHOT_EXPORT = 12;
 const OP_REPETITION_SNAPSHOT_IMPORT = 13;
+const OP_ARTIFACT_LOAD = 14;
+const OP_ARTIFACT_INSPECT = 15;
 
 const PAYLOAD_ERROR = 0;
 const PAYLOAD_PACKAGE = 1;
@@ -19,6 +21,7 @@ const PAYLOAD_GENERATE = 3;
 const PAYLOAD_STRUCTURAL = 4;
 const PAYLOAD_DIVERSE = 5;
 const PAYLOAD_SNAPSHOT = 6;
+const PAYLOAD_ARTIFACT = 7;
 
 const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder("utf-8", { fatal: true });
@@ -87,6 +90,22 @@ export type MecoResult<T> =
 
 export interface CompileSummary {
   entries: string[];
+  defaultEntry?: string;
+}
+
+export interface ArtifactLimitOptions {
+  maximumBytes?: number;
+}
+
+export interface ArtifactMetadata {
+  version: string;
+  debugProfile: "full" | "mapped" | "stripped";
+  semanticPackageHash: bigint;
+  bytecodeContentHash: bigint;
+  totalBytes: bigint;
+  ruleCount: number;
+  productionCount: number;
+  entries: readonly string[];
   defaultEntry?: string;
 }
 
@@ -462,6 +481,75 @@ export class Mecojoni {
       return this.compile(created.value, manifest);
     } finally {
       created.value.dispose();
+    }
+  }
+
+  loadArtifact(
+    bytes: Uint8Array,
+    limits: ArtifactLimitOptions = {},
+  ): MecoResult<CompiledGrammar> {
+    let decoded: DecodedResult | undefined;
+    try {
+      validateArtifactInput(bytes, limits);
+      decoded = this.invoke(OP_ARTIFACT_LOAD, bytes);
+      if (decoded.status !== 0) return decodeFailure(decoded);
+      expectKind(decoded, PAYLOAD_COMPILE);
+      const entries = Array.from({ length: decoded.reader.u32() }, () => decoded!.reader.string());
+      const defaultEntry = decoded.reader.optionalString();
+      const diagnostics = decoded.reader.diagnostics();
+      decoded.reader.finish();
+      if (decoded.valueHandle === 0) return localFailure("E_ABI_VALUE", "grammar handle is absent");
+      const handle = decoded.valueHandle;
+      decoded.valueHandle = 0;
+      return {
+        ok: true,
+        value: new CompiledGrammar(this, handle, { entries, defaultEntry }),
+        diagnostics,
+      };
+    } catch (error) {
+      if (decoded?.valueHandle) this.disposeHandle(decoded.valueHandle);
+      return caughtFailure(error);
+    }
+  }
+
+  inspectArtifact(
+    bytes: Uint8Array,
+    limits: ArtifactLimitOptions = {},
+  ): MecoResult<ArtifactMetadata> {
+    try {
+      validateArtifactInput(bytes, limits);
+      const decoded = this.invoke(OP_ARTIFACT_INSPECT, bytes);
+      if (decoded.status !== 0) return decodeFailure(decoded);
+      expectKind(decoded, PAYLOAD_ARTIFACT);
+      const profiles = ["full", "mapped", "stripped"] as const;
+      const version = decoded.reader.string();
+      const debugProfile = profiles[decoded.reader.u8()];
+      if (debugProfile === undefined) throw new Error("Invalid artifact debug profile");
+      const semanticPackageHash = decoded.reader.u64();
+      const bytecodeContentHash = decoded.reader.u64();
+      const totalBytes = decoded.reader.u64();
+      const ruleCount = decoded.reader.u32();
+      const productionCount = decoded.reader.u32();
+      const entries = Array.from({ length: decoded.reader.u32() }, () => decoded.reader.string());
+      const defaultEntry = decoded.reader.optionalString();
+      decoded.reader.finish();
+      return {
+        ok: true,
+        value: {
+          version,
+          debugProfile,
+          semanticPackageHash,
+          bytecodeContentHash,
+          totalBytes,
+          ruleCount,
+          productionCount,
+          entries,
+          defaultEntry,
+        },
+        diagnostics: [],
+      };
+    } catch (error) {
+      return caughtFailure(error);
     }
   }
 
@@ -866,6 +954,17 @@ function encodePackage(description: PackageDescription): Uint8Array {
     }
   }
   return writer.finish();
+}
+
+function validateArtifactInput(bytes: Uint8Array, limits: ArtifactLimitOptions): void {
+  if (!(bytes instanceof Uint8Array)) throw new TypeError("artifact must be a Uint8Array");
+  const maximumBytes = limits.maximumBytes ?? 64 * 1024 * 1024;
+  if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 0 || maximumBytes > 64 * 1024 * 1024) {
+    throw new RangeError("maximumBytes must be an integer from 0 through 67108864");
+  }
+  if (bytes.byteLength > maximumBytes) {
+    throw new RangeError(`artifact exceeds maximumBytes ${maximumBytes}`);
+  }
 }
 
 function readTraces(reader: Reader): {

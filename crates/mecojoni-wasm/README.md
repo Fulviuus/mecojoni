@@ -5,6 +5,10 @@ the target global allocator, validates every linear-memory range, uses monotonic
 opaque handles, returns ordinary language failures as wire results, and requires
 explicit disposal.
 
+ABI-1 operations 14 and 15 load and inspect externally supplied `bytecode/0`
+bytes. Loaded artifacts return the ordinary grammar handle, so all weighted,
+typed, message, diverse, snapshot, disposal, and telemetry APIs remain shared.
+
 Host-visible allocation count/bytes and live-handle telemetry support leak and
 warm-memory tests. The browser-neutral TypeScript owner in `js/mecojoni.ts`
 copies result payloads before disposal and is tested unchanged in Deno and Chrome.

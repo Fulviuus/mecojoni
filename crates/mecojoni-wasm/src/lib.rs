@@ -12,11 +12,12 @@ use alloc::{boxed::Box, format, string::String, vec::Vec};
 use core::cell::RefCell;
 
 use mecojoni_core::{
-    CompiledGrammar, DataBinding, Diagnostic, DiverseGenerationRequest, GeneratedContent,
-    GenerationLimits, GenerationRequest, LocaleRequest, MecoError, MecoResult, MessageArgument,
-    MessageDefinition, MessageManifest, PackageInput, PackageSource, Rational, RepetitionSnapshot,
-    RepetitionStore, ResolvedImport, SamplerSession, SchemaType, SessionSnapshot, Severity,
-    SourceFile, SourceId, Value, compile_package, compile_package_with_manifest,
+    ArtifactDebugProfile, ArtifactLimits, ArtifactMetadata, CompiledGrammar, DataBinding,
+    Diagnostic, DiverseGenerationRequest, GeneratedContent, GenerationLimits, GenerationRequest,
+    LocaleRequest, MecoError, MecoResult, MessageArgument, MessageDefinition, MessageManifest,
+    PackageInput, PackageSource, Rational, RepetitionSnapshot, RepetitionStore, ResolvedImport,
+    SamplerSession, SchemaType, SessionSnapshot, Severity, SourceFile, SourceId, Value,
+    compile_package, compile_package_with_manifest, decode_artifact, inspect_artifact,
 };
 
 mod wire;
@@ -42,6 +43,8 @@ pub const OP_SESSION_SNAPSHOT_EXPORT: u32 = 10;
 pub const OP_SESSION_SNAPSHOT_IMPORT: u32 = 11;
 pub const OP_REPETITION_SNAPSHOT_EXPORT: u32 = 12;
 pub const OP_REPETITION_SNAPSHOT_IMPORT: u32 = 13;
+pub const OP_ARTIFACT_LOAD: u32 = 14;
+pub const OP_ARTIFACT_INSPECT: u32 = 15;
 
 pub const STATUS_SUCCESS: u32 = 0;
 pub const STATUS_ERROR: u32 = 1;
@@ -54,6 +57,7 @@ const PAYLOAD_GENERATE: u32 = 3;
 const PAYLOAD_STRUCTURAL: u32 = 4;
 const PAYLOAD_DIVERSE: u32 = 5;
 const PAYLOAD_SNAPSHOT: u32 = 6;
+const PAYLOAD_ARTIFACT: u32 = 7;
 
 const MAX_MODULES: usize = 4_096;
 const MAX_IMPORTS_PER_MODULE: usize = 4_096;
@@ -267,11 +271,35 @@ fn dispatch(state: &mut State, operation: u32, input: &[u8]) -> u32 {
         OP_SESSION_SNAPSHOT_IMPORT => session_snapshot_import(state, input),
         OP_REPETITION_SNAPSHOT_EXPORT => repetition_snapshot_export(state, input),
         OP_REPETITION_SNAPSHOT_IMPORT => repetition_snapshot_import(state, input),
+        OP_ARTIFACT_LOAD => artifact_load(state, input),
+        OP_ARTIFACT_INSPECT => artifact_inspect(state, input),
         _ => state.add_error(AbiDiagnostic::new(
             "E_ABI_OPERATION",
             format!("unknown ABI operation {operation}"),
         )),
     }
+}
+
+fn artifact_load(state: &mut State, input: &[u8]) -> u32 {
+    let grammar = match decode_artifact(input, ArtifactLimits::default()) {
+        Ok(grammar) => grammar,
+        Err(error) => return add_core_error(state, &error),
+    };
+    let payload = encode_compile_success(&grammar);
+    state.add_value_result(HandleValue::Grammar(Box::new(grammar)), payload)
+}
+
+fn artifact_inspect(state: &mut State, input: &[u8]) -> u32 {
+    let metadata = match inspect_artifact(input, ArtifactLimits::default()) {
+        Ok(metadata) => metadata,
+        Err(error) => return add_core_error(state, &error),
+    };
+    state.add_result(ResultRecord {
+        status: STATUS_SUCCESS,
+        value_handle: 0,
+        value_claimed: false,
+        payload: encode_artifact_metadata(&metadata),
+    })
 }
 
 fn package_create(state: &mut State, input: &[u8]) -> u32 {
@@ -999,6 +1027,33 @@ fn encode_compile_success(grammar: &CompiledGrammar) -> Vec<u8> {
     encoder.into_bytes()
 }
 
+fn encode_artifact_metadata(metadata: &ArtifactMetadata) -> Vec<u8> {
+    let mut encoder = payload(PAYLOAD_ARTIFACT);
+    encoder.string(metadata.version);
+    encoder.u8(match metadata.debug_profile {
+        ArtifactDebugProfile::Full => 0,
+        ArtifactDebugProfile::Mapped => 1,
+        ArtifactDebugProfile::Stripped => 2,
+    });
+    encoder.u64(metadata.semantic_package_hash);
+    encoder.u64(metadata.bytecode_content_hash);
+    encoder.u64(metadata.total_bytes);
+    encoder.u32(metadata.rule_count);
+    encoder.u32(metadata.production_count);
+    encoder.u32(u32::try_from(metadata.entries.len()).unwrap_or(u32::MAX));
+    for entry in &metadata.entries {
+        encoder.string(entry);
+    }
+    match &metadata.default_entry {
+        Some(entry) => {
+            encoder.u8(1);
+            encoder.string(entry);
+        }
+        None => encoder.u8(0),
+    }
+    encoder.into_bytes()
+}
+
 fn encode_generation_success(result: &mecojoni_core::GenerationResult, typed: bool) -> Vec<u8> {
     let mut encoder = payload(PAYLOAD_GENERATE);
     encoder.string(result.text());
@@ -1430,13 +1485,13 @@ mod tests {
     use alloc::{string::ToString, vec};
 
     use super::{
-        ABI_VERSION, HandleKind, HandleValue, MAX_SNAPSHOT_BYTES, OP_COMPILE,
-        OP_COMPILE_WITH_MANIFEST, OP_GENERATE_DIVERSE, OP_GENERATE_STRUCTURAL,
-        OP_GENERATE_WEIGHTED, OP_PACKAGE_CREATE, OP_REPETITION_CREATE,
+        ABI_VERSION, HandleKind, HandleValue, MAX_SNAPSHOT_BYTES, OP_ARTIFACT_INSPECT,
+        OP_ARTIFACT_LOAD, OP_COMPILE, OP_COMPILE_WITH_MANIFEST, OP_GENERATE_DIVERSE,
+        OP_GENERATE_STRUCTURAL, OP_GENERATE_WEIGHTED, OP_PACKAGE_CREATE, OP_REPETITION_CREATE,
         OP_REPETITION_SNAPSHOT_EXPORT, OP_REPETITION_SNAPSHOT_IMPORT, OP_SESSION_CREATE,
-        OP_SESSION_SNAPSHOT_EXPORT, OP_SESSION_SNAPSHOT_IMPORT, PAYLOAD_DIVERSE, PAYLOAD_ERROR,
-        PAYLOAD_GENERATE, PAYLOAD_SNAPSHOT, PAYLOAD_STRUCTURAL, STATUS_ERROR, STATUS_SUCCESS,
-        State, WIRE_VERSION, dispatch, meco_abi_version, meco_core_api_version,
+        OP_SESSION_SNAPSHOT_EXPORT, OP_SESSION_SNAPSHOT_IMPORT, PAYLOAD_ARTIFACT, PAYLOAD_DIVERSE,
+        PAYLOAD_ERROR, PAYLOAD_GENERATE, PAYLOAD_SNAPSHOT, PAYLOAD_STRUCTURAL, STATUS_ERROR,
+        STATUS_SUCCESS, State, WIRE_VERSION, dispatch, meco_abi_version, meco_core_api_version,
     };
     use crate::wire::{Decoder, Encoder};
 
@@ -1607,6 +1662,53 @@ mod tests {
             assert!(!state.dispose(handle));
         }
         assert!(state.handles.is_empty());
+    }
+
+    #[test]
+    fn artifact_load_and_inspect_reuse_ordinary_grammar_handles() {
+        let package = mecojoni_core::PackageInput {
+            root_id: "root".to_string(),
+            modules: vec![mecojoni_core::PackageSource {
+                canonical_id: "root".to_string(),
+                source: mecojoni_core::SourceFile::new(
+                    mecojoni_core::SourceId::new(0),
+                    "root.meco",
+                    "---\nmeco: 2\nmodule: root\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
+                ),
+                resolved_imports: vec![],
+            }],
+        };
+        let grammar = mecojoni_core::compile_package(&package).expect("compile");
+        let artifact =
+            mecojoni_core::encode_artifact(&grammar, mecojoni_core::ArtifactOptions::default())
+                .expect("encode");
+        let mut state = State::new();
+        let inspected = dispatch(&mut state, OP_ARTIFACT_INSPECT, &artifact);
+        let mut metadata = Decoder::new(&state.result(inspected).expect("inspect result").payload);
+        assert_eq!(metadata.u32(), Ok(WIRE_VERSION));
+        assert_eq!(metadata.u32(), Ok(PAYLOAD_ARTIFACT));
+        assert_eq!(metadata.string(64), Ok("bytecode/0".to_string()));
+
+        let loaded = dispatch(&mut state, OP_ARTIFACT_LOAD, &artifact);
+        let handle = state.claim_result_value(loaded).expect("grammar handle");
+        assert!(matches!(state.get(handle), Some(HandleValue::Grammar(_))));
+        let generated = dispatch(
+            &mut state,
+            OP_GENERATE_WEIGHTED,
+            &generation_request(handle),
+        );
+        assert_eq!(
+            state.result(generated).expect("generation").status,
+            STATUS_SUCCESS
+        );
+
+        let mut corrupt = artifact;
+        corrupt[0] = 0;
+        let rejected = dispatch(&mut state, OP_ARTIFACT_LOAD, &corrupt);
+        assert_eq!(
+            state.result(rejected).expect("rejection").status,
+            STATUS_ERROR
+        );
     }
 
     #[test]

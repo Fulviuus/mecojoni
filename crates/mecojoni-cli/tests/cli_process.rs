@@ -266,6 +266,62 @@ fn explicit_global_or_command_help_uses_stdout_and_success() {
 }
 
 #[test]
+fn artifact_commands_round_trip_real_filesystem_packages_atomically() {
+    let artifact = temp_path("root.mecob");
+    let compiled = meco(&[
+        "compile-artifact",
+        &root_string(),
+        "--profile",
+        "mapped",
+        "--write",
+        artifact.to_str().unwrap(),
+    ]);
+    assert_eq!(
+        compiled.status.code(),
+        Some(0),
+        "{}",
+        text(&compiled.stderr)
+    );
+    assert!(fs::read(&artifact).unwrap().starts_with(b"MECB"));
+
+    for command in ["inspect-artifact", "verify-artifact"] {
+        let output = meco(&[command, artifact.to_str().unwrap(), "--output=jsonl"]);
+        assert_eq!(output.status.code(), Some(0), "{}", text(&output.stderr));
+        assert!(text(&output.stdout).contains("bytecode/0") || command == "verify-artifact");
+    }
+    let generated = meco(&[
+        "generate-artifact",
+        artifact.to_str().unwrap(),
+        "--seed=7",
+        "--data=playerName=Rin",
+    ]);
+    let source = meco(&[
+        "generate",
+        &root_string(),
+        "--seed=7",
+        "--data=playerName=Rin",
+    ]);
+    assert_eq!(
+        generated.status.code(),
+        Some(0),
+        "{}",
+        text(&generated.stderr)
+    );
+    assert_eq!(generated.stdout, source.stdout);
+
+    let corrupt = temp_path("corrupt.mecob");
+    let mut bytes = fs::read(&artifact).unwrap();
+    bytes[0] = 0;
+    fs::write(&corrupt, bytes).unwrap();
+    let rejected = meco(&["verify-artifact", corrupt.to_str().unwrap()]);
+    assert_eq!(rejected.status.code(), Some(1));
+    assert!(rejected.stdout.is_empty());
+    assert!(text(&rejected.stderr).contains("E_BYTECODE_MAGIC"));
+    let _ = fs::remove_file(artifact);
+    let _ = fs::remove_file(corrupt);
+}
+
+#[test]
 fn external_message_schema_is_loaded_for_check_and_manifest_export() {
     let root = fixture("messages/root.meco");
     let messages = fixture("messages/messages.manifest");

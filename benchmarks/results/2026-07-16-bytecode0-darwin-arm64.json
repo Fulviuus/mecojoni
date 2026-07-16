@@ -1,0 +1,46 @@
+{
+  "schema": "mecojoni-artifact-benchmark-result/1",
+  "recordedAt": "2026-07-16",
+  "host": { "os": "Darwin 25.3.0", "architecture": "arm64", "cpu": "Apple M1 Max" },
+  "toolchain": { "rust": "1.85.0", "deno": "2.8.3", "v8": "14.9.207.2-rusty" },
+  "package": {
+    "name": "harbor-dialogue",
+    "profile": "full",
+    "sourceBytes": 1258,
+    "manifestBytes": 28,
+    "artifactBytes": 7407,
+    "rules": 11,
+    "productions": 35,
+    "semanticHash": "a7bbf39cec63a6fb",
+    "contentHash": "d1449b48b0cf0396"
+  },
+  "samples": 5,
+  "nativeRust": {
+    "artifactEncodeNs": 38125,
+    "sourceCompileNsMedian": 66458,
+    "sourceCompileAllocatedBytesMedian": 122815,
+    "artifactLoadNsMedian": 19000,
+    "artifactLoadAllocatedBytesMedian": 17254,
+    "sourceFirstGenerationNsMedian": 1208,
+    "artifactFirstGenerationNsMedian": 1166,
+    "sourceFirstGenerationAllocatedBytesMedian": 1458,
+    "artifactFirstGenerationAllocatedBytesMedian": 1458
+  },
+  "wasmDeno": {
+    "sourceCompileMsMedian": 0.261125,
+    "artifactLoadMsMedian": 0.113417,
+    "sourceFirstGenerationMsMedian": 0.045458,
+    "artifactFirstGenerationMsMedian": 0.047542,
+    "sourceMemoryBefore": 1114112,
+    "sourceMemoryAfterCompile": 1245184,
+    "artifactMemoryBefore": 1114112,
+    "artifactMemoryAfterLoad": 1179648,
+    "liveHandlesAfterDispose": 0,
+    "liveAllocationsAfterDispose": 0
+  },
+  "semanticOperationEvidence": {
+    "expansions": 4,
+    "samplerWords": 4,
+    "outputBytes": 40
+  }
+}

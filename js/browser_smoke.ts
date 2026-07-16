@@ -18,6 +18,24 @@ async function run(): Promise<void> {
     return response.arrayBuffer();
   });
   const meco = await Mecojoni.instantiate(wasm);
+  const artifactBytes = await fetch("/fixtures/hello.mecob").then(async (response) => {
+    if (!response.ok) throw new Error(`artifact fetch failed: ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  });
+  const artifactMetadata = meco.inspectArtifact(artifactBytes);
+  if (!artifactMetadata.ok) throw new Error(artifactMetadata.error.message);
+  if (artifactMetadata.value.version !== "bytecode/0") {
+    throw new Error(`unexpected artifact version ${artifactMetadata.value.version}`);
+  }
+  const artifact = meco.loadArtifact(artifactBytes);
+  if (!artifact.ok) throw new Error(artifact.error.message);
+  try {
+    const generated = meco.generateWeighted(artifact.value, { seed: 7n });
+    if (!generated.ok) throw new Error(generated.error.message);
+    if (generated.value.text.length === 0) throw new Error("artifact generated empty text");
+  } finally {
+    artifact.value.dispose();
+  }
   const [root, common, expected] = await Promise.all([
     fetchText("/fixtures/weighted/root.meco"),
     fetchText("/fixtures/weighted/common.meco"),
@@ -266,7 +284,7 @@ async function run(): Promise<void> {
   if (meco.liveHandleCount !== 0) throw new Error(`Leaked ${meco.liveHandleCount} handles`);
   document.body.dataset.status = "passed";
   document.body.textContent =
-    "Mecojoni browser WASM weighted, typed, localized, and diverse corpora passed";
+    "Mecojoni browser WASM source, bytecode, typed, localized, and diverse corpora passed";
 }
 
 try {

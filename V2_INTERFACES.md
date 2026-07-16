@@ -185,6 +185,8 @@ are rejected, and trailing bytes are errors.
 | session snapshot import | 11 | bounded `snapshot/1` bytes | restored session handle plus canonical bytes |
 | repetition snapshot export | 12 | repetition-store handle | `snapshot/1` bytes |
 | repetition snapshot import | 13 | bounded `snapshot/1` bytes | restored repetition-store handle plus canonical bytes |
+| artifact load | 14 | bounded canonical `.mecob` bytes | ordinary grammar handle plus compile summary |
+| artifact inspect | 15 | bounded canonical `.mecob` bytes | verified version, profile, hashes, sizes, counts, and entries |
 
 Generation limits are depth, expansions, output Unicode scalars, output UTF-8
 bytes, and sampler words in that order. A `u64` is always little-endian and the
@@ -193,6 +195,10 @@ TypeScript API accepts it as `bigint`.
 Operation 3 remains byte-for-byte compatible with the first ABI-1 vertical slice;
 operation 4 is the additive typed extension used by message-free requests.
 Operation 5 compiles message-bearing packages without changing operation 2.
+Operations 14 and 15 add experimental `bytecode/0` loading without changing the
+grammar handle or generation operations. The TypeScript owner exposes them as
+`loadArtifact` and `inspectArtifact`; all input buffers are copied through the
+existing allocation boundary and released before return.
 Operation 6 produces structure for a synchronous host callback without WASM
 imports, host re-entry, or locale I/O inside the module. Request
 values use a one-byte kind: text `0` plus `str`; number `1` plus signed

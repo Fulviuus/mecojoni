@@ -43,6 +43,14 @@ multi-module Harbor package under [`benchmarks/packages/harbor`](benchmarks/pack
 The filename `operations-v1.contract` below means version 1 of the operation
 contract; it is not a benchmark of the Mecojoni v1 language.
 
+The first source-versus-`bytecode/0` Harbor result is recorded separately as
+[`benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json`](benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json).
+On this run, native owned decode was 19.0 µs versus 66.5 µs source compilation;
+Deno/WASM decode was 0.113 ms versus 0.261 ms source compilation. First
+generation remained effectively unchanged. The full artifact is 7,407 bytes
+versus 1,286 source-plus-manifest bytes before compression, so deployment-size
+and embedded-WASM gates still decide B6.
+
 It reports compile/generation time, linear-memory pages before/after compile and
 dispose, operation counts, live handles, and host-visible ABI allocations. The
 normative Deno test requires zero leaked handles/allocations and at most one page

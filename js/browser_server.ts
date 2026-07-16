@@ -13,6 +13,13 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
+    "/fixtures/hello.mecob",
+    {
+      path: new URL("js/fixtures/hello.mecob", workspace),
+      contentType: "application/octet-stream",
+    },
+  ],
+  [
     "/fixtures/weighted/root.meco",
     {
       path: new URL(

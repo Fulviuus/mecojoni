@@ -23,10 +23,11 @@ use std::{
 
 use loader::{format_meco_error, load_package};
 use mecojoni_core::{
-    CompiledGrammar, DataBinding, Diagnostic, GenerationLimits, GenerationRequest, MecoError,
-    MessageArgument, MessageDefinition, MessageManifest, PackageManifest, Rational, SchemaType,
-    Severity, Value, audit_rendered_repetition, audit_structural_repetition, compile_package,
-    compile_package_with_manifest,
+    ArtifactDebugProfile, ArtifactLimits, ArtifactOptions, CompiledGrammar, DataBinding,
+    Diagnostic, GenerationLimits, GenerationRequest, MecoError, MessageArgument, MessageDefinition,
+    MessageManifest, PackageManifest, Rational, SchemaType, Severity, Value,
+    audit_rendered_repetition, audit_structural_repetition, compile_package,
+    compile_package_with_manifest, decode_artifact, encode_artifact, inspect_artifact,
 };
 
 pub const CLI_VERSION: &str = "cli/1";
@@ -99,6 +100,10 @@ enum Command {
     Migrate,
     Format,
     Bench,
+    CompileArtifact,
+    InspectArtifact,
+    VerifyArtifact,
+    GenerateArtifact,
 }
 
 #[derive(Debug, Default)]
@@ -114,6 +119,7 @@ struct Options {
     write: Option<PathBuf>,
     messages: Option<PathBuf>,
     data: Vec<(String, String)>,
+    profile: ArtifactDebugProfile,
 }
 
 /// Runs the dependency-free authoring CLI against supplied streams.
@@ -182,6 +188,10 @@ fn execute<O: Write, E: Write>(
     match command {
         Command::Migrate => migrate_command(options, stdout, stderr),
         Command::Format => format_command(options, stdout),
+        Command::CompileArtifact => compile_artifact_command(options, stdout),
+        Command::InspectArtifact => inspect_artifact_command(options, stdout),
+        Command::VerifyArtifact => verify_artifact_command(options, stdout),
+        Command::GenerateArtifact => generate_artifact_command(options, stdout, stderr),
         _ => package_command(command, options, stdout, stderr),
     }
 }
@@ -218,9 +228,159 @@ fn package_command<O: Write, E: Write>(
         Command::Audit => audit(&grammar, options, stdout),
         Command::Manifest => manifest(&grammar, options, stdout),
         Command::Bench => bench(&grammar, options, stdout),
-        Command::Migrate | Command::Format => {
-            Err(CliError::internal("invalid package command dispatch"))
-        }
+        Command::Migrate
+        | Command::Format
+        | Command::CompileArtifact
+        | Command::InspectArtifact
+        | Command::VerifyArtifact
+        | Command::GenerateArtifact => Err(CliError::internal("invalid package command dispatch")),
+    }
+}
+
+fn compile_artifact_command<O: Write>(options: &Options, stdout: &mut O) -> CliResult<i32> {
+    let path = required_path(options)?;
+    let output = options
+        .write
+        .as_deref()
+        .ok_or_else(|| CliError::usage("compile-artifact requires --write <path.mecob>"))?;
+    let package = load_package(path)?;
+    let manifest = options
+        .messages
+        .as_deref()
+        .map(read_message_manifest)
+        .transpose()?;
+    let grammar = manifest
+        .as_ref()
+        .map_or_else(
+            || compile_package(&package.input),
+            |manifest| compile_package_with_manifest(&package.input, manifest),
+        )
+        .map_err(CliError::domain)?;
+    let bytes = encode_artifact(
+        &grammar,
+        ArtifactOptions {
+            debug_profile: options.profile,
+        },
+    )
+    .map_err(CliError::domain)?;
+    let decoded = decode_artifact(&bytes, ArtifactLimits::default()).map_err(CliError::domain)?;
+    if grammar != decoded {
+        return Err(CliError::internal(
+            "artifact equivalence sanity check changed the lowered grammar",
+        ));
+    }
+    write_atomic(output, &bytes)?;
+    let metadata = inspect_artifact(&bytes, ArtifactLimits::default()).map_err(CliError::domain)?;
+    if options.output == OutputMode::Jsonl {
+        writeln!(
+            stdout,
+            "{{\"cli\":\"{CLI_VERSION}\",\"kind\":\"compileArtifact\",\"path\":{},\"version\":{},\"bytes\":{},\"semanticHash\":\"{:016x}\",\"contentHash\":\"{:016x}\"}}",
+            json_string(&output.display().to_string()),
+            json_string(metadata.version),
+            metadata.total_bytes,
+            metadata.semantic_package_hash,
+            metadata.bytecode_content_hash
+        )
+    } else {
+        writeln!(
+            stdout,
+            "compiled {} ({} bytes, semantic {:016x}, content {:016x})",
+            output.display(),
+            metadata.total_bytes,
+            metadata.semantic_package_hash,
+            metadata.bytecode_content_hash
+        )
+    }
+    .map_err(output_error)?;
+    Ok(0)
+}
+
+fn inspect_artifact_command<O: Write>(options: &Options, stdout: &mut O) -> CliResult<i32> {
+    let path = required_path(options)?;
+    let bytes = fs::read(path).map_err(|error| CliError::io(path, &error))?;
+    let metadata = inspect_artifact(&bytes, ArtifactLimits::default()).map_err(CliError::domain)?;
+    if options.output == OutputMode::Jsonl {
+        writeln!(
+            stdout,
+            "{{\"cli\":\"{CLI_VERSION}\",\"kind\":\"artifact\",\"version\":{},\"profile\":{},\"bytes\":{},\"rules\":{},\"productions\":{},\"semanticHash\":\"{:016x}\",\"contentHash\":\"{:016x}\",\"entries\":{}}}",
+            json_string(metadata.version),
+            json_string(profile_name(metadata.debug_profile)),
+            metadata.total_bytes,
+            metadata.rule_count,
+            metadata.production_count,
+            metadata.semantic_package_hash,
+            metadata.bytecode_content_hash,
+            strings_json(&metadata.entries)
+        )
+    } else {
+        writeln!(
+            stdout,
+            "{} {:?}: {} bytes, {} rules, {} productions, semantic {:016x}, content {:016x}\nentries: {}",
+            metadata.version,
+            metadata.debug_profile,
+            metadata.total_bytes,
+            metadata.rule_count,
+            metadata.production_count,
+            metadata.semantic_package_hash,
+            metadata.bytecode_content_hash,
+            metadata.entries.join(", ")
+        )
+    }
+    .map_err(output_error)?;
+    Ok(0)
+}
+
+fn verify_artifact_command<O: Write>(options: &Options, stdout: &mut O) -> CliResult<i32> {
+    let path = required_path(options)?;
+    let bytes = fs::read(path).map_err(|error| CliError::io(path, &error))?;
+    let grammar = decode_artifact(&bytes, ArtifactLimits::default()).map_err(CliError::domain)?;
+    if options.output == OutputMode::Jsonl {
+        writeln!(
+            stdout,
+            "{{\"cli\":\"{CLI_VERSION}\",\"kind\":\"verifyArtifact\",\"valid\":true,\"rules\":{},\"productions\":{}}}",
+            grammar.rule_count(),
+            grammar.production_count()
+        )
+    } else {
+        writeln!(
+            stdout,
+            "verify: ok ({} rules, {} productions)",
+            grammar.rule_count(),
+            grammar.production_count()
+        )
+    }
+    .map_err(output_error)?;
+    Ok(0)
+}
+
+fn generate_artifact_command<O: Write, E: Write>(
+    options: &Options,
+    stdout: &mut O,
+    stderr: &mut E,
+) -> CliResult<i32> {
+    let path = required_path(options)?;
+    let bytes = fs::read(path).map_err(|error| CliError::io(path, &error))?;
+    let grammar = decode_artifact(&bytes, ArtifactLimits::default()).map_err(CliError::domain)?;
+    generate(&grammar, options, stdout, stderr)
+}
+
+fn write_atomic(path: &Path, bytes: &[u8]) -> CliResult<()> {
+    let mut temporary = path.as_os_str().to_os_string();
+    temporary.push(format!(".tmp-{}", std::process::id()));
+    let temporary = PathBuf::from(temporary);
+    fs::write(&temporary, bytes).map_err(|error| CliError::io(&temporary, &error))?;
+    if let Err(error) = fs::rename(&temporary, path) {
+        let _ = fs::remove_file(&temporary);
+        return Err(CliError::io(path, &error));
+    }
+    Ok(())
+}
+
+const fn profile_name(profile: ArtifactDebugProfile) -> &'static str {
+    match profile {
+        ArtifactDebugProfile::Full => "full",
+        ArtifactDebugProfile::Mapped => "mapped",
+        ArtifactDebugProfile::Stripped => "stripped",
     }
 }
 
@@ -682,6 +842,18 @@ fn parse_options(command: Command, arguments: &[String]) -> CliResult<Options> {
                 "--samples" => options.samples = parse_positive_u32(flag, value)?,
                 "--write" => options.write = Some(PathBuf::from(value)),
                 "--messages" => options.messages = Some(PathBuf::from(value)),
+                "--profile" => {
+                    options.profile = match value {
+                        "full" => ArtifactDebugProfile::Full,
+                        "mapped" => ArtifactDebugProfile::Mapped,
+                        "stripped" => ArtifactDebugProfile::Stripped,
+                        _ => {
+                            return Err(CliError::usage(
+                                "--profile must be full, mapped, or stripped",
+                            ));
+                        }
+                    };
+                }
                 _ => return Err(CliError::usage(format!("unknown option {flag}"))),
             }
             continue;
@@ -734,6 +906,10 @@ fn parse_command(value: &str) -> CliResult<Command> {
         "migrate" => Ok(Command::Migrate),
         "fmt" | "format" => Ok(Command::Format),
         "bench" => Ok(Command::Bench),
+        "compile-artifact" => Ok(Command::CompileArtifact),
+        "inspect-artifact" => Ok(Command::InspectArtifact),
+        "verify-artifact" => Ok(Command::VerifyArtifact),
+        "generate-artifact" => Ok(Command::GenerateArtifact),
         other => Err(CliError::usage(format!("unknown command {other}"))),
     }
 }
@@ -961,7 +1137,7 @@ fn output_error(error: std::io::Error) -> CliError {
 }
 
 fn usage() -> &'static str {
-    "Usage: meco <command> <source> [options]\n\nCommands:\n  check      Parse, compile, and validate a v2 package\n  generate   Generate deterministic weighted text\n  trace      Generate text with derivation traces\n  lint       Report compiler and composition warnings\n  audit      Sample and report structural/rendered repetition\n  manifest   Export the compiled input/message schema\n  migrate    Rewrite a frozen v1 source as explicit v2\n  fmt        Validate and conservatively format v2 source\n  bench      Measure deterministic local generation work\n\nOptions:\n  --output <text|jsonl>  Output contract (default: text)\n  --entry <rule>         Explicit exported qualified rule\n  --seed <u64>           Deterministic splitmix64 seed\n  --count <n>            Generation/bench count\n  --samples <n>          Audit sample count\n  --data <name=value>    Typed host input (repeatable)\n  --trace                 Include traces\n  --deny-warnings         Return status 1 when warnings occur\n  --write <path>          Write migrate/fmt output\n  --messages <path>       Message schema (id|name:type,...)\n  -h, --help              Show this help\n"
+    "Usage: meco <command> <source-or-artifact> [options]\n\nCommands:\n  check              Parse, compile, and validate a v2 package\n  generate           Generate deterministic weighted text\n  trace              Generate text with derivation traces\n  lint               Report compiler and composition warnings\n  audit              Sample and report structural/rendered repetition\n  manifest           Export the compiled input/message schema\n  migrate            Rewrite a frozen v1 source as explicit v2\n  fmt                Validate and conservatively format v2 source\n  bench              Measure deterministic local generation work\n  compile-artifact   Compile a complete source package to .mecob\n  inspect-artifact   Report verified artifact metadata\n  verify-artifact    Verify an artifact without generation\n  generate-artifact  Generate from a verified artifact\n\nOptions:\n  --output <text|jsonl>  Output contract (default: text)\n  --entry <rule>         Explicit exported qualified rule\n  --seed <u64>           Deterministic splitmix64 seed\n  --count <n>            Generation/bench count\n  --samples <n>          Audit sample count\n  --data <name=value>    Typed host input (repeatable)\n  --trace                 Include traces\n  --deny-warnings         Return status 1 when warnings occur\n  --write <path>          Write migrate/fmt/artifact output\n  --messages <path>       Message schema (id|name:type,...)\n  --profile <name>        Artifact profile: full, mapped, stripped\n  -h, --help              Show this help\n"
 }
 
 #[cfg(test)]

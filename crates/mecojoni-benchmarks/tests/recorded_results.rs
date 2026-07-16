@@ -24,3 +24,20 @@ fn recorded_cross_runtime_result_covers_every_workload_and_harbor() {
     assert_eq!(result.matches("\"v2Rust\"").count(), 7);
     assert_eq!(result.matches("\"v2Wasm\"").count(), 7);
 }
+
+#[test]
+fn recorded_bytecode_result_contains_native_and_wasm_source_comparisons() {
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json");
+    let result = fs::read_to_string(path).expect("recorded bytecode result exists");
+    for field in [
+        "mecojoni-artifact-benchmark-result/1",
+        "sourceCompileNsMedian",
+        "artifactLoadNsMedian",
+        "sourceCompileMsMedian",
+        "artifactLoadMsMedian",
+        "liveHandlesAfterDispose",
+    ] {
+        assert!(result.contains(field), "missing {field}");
+    }
+}

@@ -35,6 +35,11 @@ The current Rust API can canonically `encode_artifact`, `decode_artifact`,
 coupled and hostile-input checked; applications must not treat it as a frozen
 distribution contract yet.
 
+The authoring CLI can compile, inspect, verify, and generate `.mecob` files.
+Deno and browser hosts can inspect or load the same bytes through
+`Mecojoni.inspectArtifact` and `Mecojoni.loadArtifact`; loaded artifacts use the
+ordinary grammar-handle lifecycle and leak telemetry.
+
 The syntax in this README is authoritative. `V2_SPECIFICATION.md` must be updated
 with every syntax change; if the documents temporarily disagree, this README wins.
 

@@ -558,7 +558,7 @@ latency promise is inferred from one machine.
 | B1 — Lowered IR boundary | Complete |
 | B2 — Experimental `bytecode/0` | Complete |
 | B3 — Complete semantics | Complete |
-| B4 — CLI and external WASM | Pending |
+| B4 — CLI and external WASM | Complete |
 | B5 — Single-WASM build | Pending |
 | B6 — Freeze or stop | Pending |
 

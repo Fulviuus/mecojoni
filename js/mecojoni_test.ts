@@ -598,6 +598,51 @@ Deno.test("repeated package compile generate dispose cycles release every handle
   );
 });
 
+Deno.test("filesystem bytecode loads, inspects, matches source, and releases handles", async () => {
+  const meco = await instantiate();
+  const bytes = await Deno.readFile(new URL("fixtures/hello.mecob", import.meta.url));
+  const metadata = meco.inspectArtifact(bytes);
+  assert(metadata.ok, metadata.ok ? "" : metadata.error.message);
+  assertEquals(metadata.value.version, "bytecode/0");
+  assertEquals(metadata.value.debugProfile, "full");
+  assertEquals(metadata.value.ruleCount, 2);
+  assertEquals(metadata.value.productionCount, 5);
+  assert(metadata.value.totalBytes === BigInt(bytes.byteLength), "artifact byte length differs");
+
+  const source = await Deno.readTextFile(new URL("../examples/hello.meco", import.meta.url));
+  const compiled = meco.compilePackage({
+    rootId: "hello",
+    modules: [{
+      canonicalId: "hello",
+      sourceId: 0,
+      sourceName: "hello.meco",
+      source,
+      resolvedImports: [],
+    }],
+  });
+  assert(compiled.ok, compiled.ok ? "" : compiled.error.message);
+  for (let cycle = 0; cycle < 100; cycle++) {
+    const loaded = meco.loadArtifact(bytes);
+    assert(loaded.ok, loaded.ok ? "" : loaded.error.message);
+    const fromSource = meco.generateWeighted(compiled.value, { seed: BigInt(cycle) });
+    const fromArtifact = meco.generateWeighted(loaded.value, { seed: BigInt(cycle) });
+    assert(fromSource.ok, fromSource.ok ? "" : fromSource.error.message);
+    assert(fromArtifact.ok, fromArtifact.ok ? "" : fromArtifact.error.message);
+    assertEquals(fromArtifact.value, fromSource.value);
+    loaded.value.dispose();
+  }
+  compiled.value.dispose();
+  assertEquals(meco.liveHandleCount, 0);
+  assertEquals(meco.liveAllocationCount, 0);
+
+  const corrupt = bytes.slice();
+  corrupt[0] = 0;
+  const rejected = meco.loadArtifact(corrupt);
+  assert(!rejected.ok, "corrupt artifact loaded");
+  assertEquals(rejected.diagnostics[0].code, "E_BYTECODE_MAGIC");
+  assertEquals(meco.liveHandleCount, 0);
+});
+
 Deno.test("wrapper source remains browser-neutral", async () => {
   const source = await Deno.readTextFile(new URL("mecojoni.ts", import.meta.url));
   assert(!source.includes("Deno."), "browser wrapper contains a Deno runtime dependency");

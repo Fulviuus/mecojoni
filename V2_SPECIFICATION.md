@@ -1396,6 +1396,11 @@ including dynamic expressions, bindings, messages, provenance, diverse state,
 snapshots, and replay identity. This implementation fact does not freeze the
 container; milestone B6 remains the compatibility decision.
 
+CLI-1 additively provides `compile-artifact`, `inspect-artifact`,
+`verify-artifact`, and `generate-artifact`. ABI-1 operations 14 and 15 provide
+external artifact loading and inspection; TypeScript uses the same ordinary
+grammar handle and explicit disposal contract as source compilation.
+
 ## Verification strategy
 
 ### Conformance and parser tests

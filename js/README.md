@@ -5,6 +5,11 @@ source strings, rejects unpaired UTF-16 before encoding, copies strict UTF-8 thr
 allocations, and exposes ordinary compiler or generation failures as `MecoResult<T>` values. Seeds
 and diagnostic span offsets use `bigint` so JavaScript never rounds a Rust `u64`.
 
+`loadArtifact(Uint8Array)` and `inspectArtifact(Uint8Array)` expose external `.mecob` loading in
+Deno and browsers. They enforce the 64 MiB host boundary before entering WASM; core decoding then
+applies independent structural and decoded-memory limits. Returned grammars use the same `dispose()`
+lifecycle as source compilation.
+
 Generation data uses explicit discriminated `MecoValue` objects. Exact numbers carry `bigint`
 numerator/denominator fields; finite enums carry their member string and are checked against the
 compiled schema. `traceBindings: true` returns ordered silent/emitting binding records;

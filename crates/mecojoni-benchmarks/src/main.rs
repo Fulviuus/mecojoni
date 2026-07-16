@@ -9,7 +9,8 @@ use mecojoni_benchmarks::{
     operation_contract, workload_limits, workloads,
 };
 use mecojoni_core::{
-    DataBinding, GenerationRequest, Rational, Value, compile_package, compile_package_with_manifest,
+    ArtifactLimits, ArtifactOptions, DataBinding, GenerationRequest, Rational, Value,
+    compile_package, compile_package_with_manifest, decode_artifact, encode_artifact,
 };
 
 struct CountingAllocator;
@@ -101,6 +102,10 @@ struct Measurement {
 }
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("--artifact-startup") {
+        measure_artifact_startup();
+        return;
+    }
     if std::env::args().nth(1).as_deref() == Some("--startup") {
         measure_startup();
         return;
@@ -164,6 +169,89 @@ fn main() {
     }
 }
 
+fn measure_artifact_startup() {
+    let samples = 5;
+    let package = harbor_startup_package().expect("committed Harbor package loads");
+    let source = compile_package_with_manifest(&package.input, &package.manifest)
+        .expect("committed Harbor package compiles");
+    let encode_started = Instant::now();
+    let bytes = encode_artifact(&source, ArtifactOptions::default()).expect("Harbor encodes");
+    let encode_ns = encode_started.elapsed().as_nanos();
+    let mut measurements = Vec::new();
+    for _ in 0..samples {
+        let before_compile = AllocationSnapshot::now();
+        let compile_started = Instant::now();
+        let grammar = decode_artifact(&bytes, ArtifactLimits::default()).expect("Harbor decodes");
+        let compile_ns = compile_started.elapsed().as_nanos();
+        let after_compile = AllocationSnapshot::now();
+        let (compile_calls, compile_bytes, compile_live) = after_compile.since(before_compile);
+        let data = startup_data();
+        let before_generation = AllocationSnapshot::now();
+        let generation_started = Instant::now();
+        let result = grammar
+            .generate_weighted(&GenerationRequest {
+                entry: Some("harbor.scene"),
+                seed: 0,
+                limits: workload_limits(),
+                data: &data,
+                trace_bindings: false,
+                trace_selections: false,
+                trace_provenance: false,
+            })
+            .expect("Harbor artifact generates");
+        let generation_ns = generation_started.elapsed().as_nanos();
+        let after_generation = AllocationSnapshot::now();
+        let (generation_calls, generation_bytes, generation_live) =
+            after_generation.since(before_generation);
+        measurements.push(Measurement {
+            rules: grammar.rule_count(),
+            productions: grammar.production_count(),
+            compile_ns,
+            compile_calls,
+            compile_bytes,
+            compile_live,
+            generation_ns,
+            generation_calls,
+            generation_bytes,
+            generation_live,
+            expansions: u64::from(result.expansions()),
+            sampler_words: u64::from(result.sampler_words()),
+            output_bytes: result.text().len() as u64,
+        });
+    }
+    let first = measurements[0];
+    println!(
+        "version,package,samples,artifact_bytes,encode_ns,load_ns_median,load_alloc_calls_median,load_alloc_bytes_median,load_live_bytes_median,first_generation_ns_median,first_generation_alloc_calls_median,first_generation_alloc_bytes_median,first_generation_live_bytes_median,rules,productions,expansions,sampler_words,output_bytes,artifact_hash"
+    );
+    println!(
+        "{STARTUP_PROFILE_VERSION},{},{samples},{},{encode_ns},{},{},{},{},{},{},{},{},{},{},{},{},{},{:016x}",
+        package.name,
+        bytes.len(),
+        median(&measurements, |sample| sample.compile_ns),
+        median(&measurements, |sample| sample.compile_calls),
+        median(&measurements, |sample| sample.compile_bytes),
+        median(&measurements, |sample| sample.compile_live),
+        median(&measurements, |sample| sample.generation_ns),
+        median(&measurements, |sample| sample.generation_calls),
+        median(&measurements, |sample| sample.generation_bytes),
+        median(&measurements, |sample| sample.generation_live),
+        first.rules,
+        first.productions,
+        first.expansions,
+        first.sampler_words,
+        first.output_bytes,
+        source.artifact_hash(),
+    );
+}
+
+fn startup_data() -> [DataBinding; 3] {
+    [
+        DataBinding::new("visitor".to_string(), Value::Text("Rin".to_string())),
+        DataBinding::new("mood".to_string(), Value::Enum("tense".to_string())),
+        DataBinding::new("urgency".to_string(), Value::Number(Rational::ONE)),
+    ]
+}
+
 fn measure_startup() {
     let samples = 5;
     let mut measurements = Vec::new();
@@ -176,11 +264,7 @@ fn measure_startup() {
         let compile_ns = compile_started.elapsed().as_nanos();
         let after_compile = AllocationSnapshot::now();
         let (compile_calls, compile_bytes, compile_live) = after_compile.since(before_compile);
-        let data = [
-            DataBinding::new("visitor".to_string(), Value::Text("Rin".to_string())),
-            DataBinding::new("mood".to_string(), Value::Enum("tense".to_string())),
-            DataBinding::new("urgency".to_string(), Value::Number(Rational::ONE)),
-        ];
+        let data = startup_data();
         let before_generation = AllocationSnapshot::now();
         let generation_started = Instant::now();
         let result = grammar
