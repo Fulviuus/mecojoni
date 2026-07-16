@@ -371,7 +371,7 @@ fn parse_weight_prefix<'a>(
     let metadata = &content[1..close];
     let metadata_span = span(source, start + 1, start + close);
     let (weight, authored_id) = if metadata.contains('=') {
-        parse_long_weight(source, metadata, start + 1, metadata_span)?
+        parse_long_weight(source, metadata, start + 1)?
     } else if let Ok(value) = Rational::from_str(metadata) {
         if !value.is_positive() {
             return Err(failure(
@@ -412,7 +412,6 @@ fn parse_long_weight(
     source: &SourceFile,
     metadata: &str,
     start: usize,
-    metadata_span: Span,
 ) -> MecoResult<(WeightSyntax, Option<Spanned<String>>)> {
     let mut weight = None;
     let mut authored_id = None;
@@ -459,14 +458,7 @@ fn parse_long_weight(
         }
         relative += raw.len() + 1;
     }
-    let weight = weight.ok_or_else(|| {
-        failure(
-            DiagnosticCode::WEIGHT_SYNTAX,
-            metadata_span,
-            "long weight metadata requires `weight = expression`",
-        )
-    })?;
-    Ok((weight, authored_id))
+    Ok((weight.unwrap_or(WeightSyntax::Default), authored_id))
 }
 
 fn parse_clause_prefixes<'a>(
@@ -1748,6 +1740,7 @@ mod tests {
             "- [3] Hello, $name and @person!\n",
             "- [weight = urgency * 2, id = urgent] r\"Wait @here\"\n",
             "- [urgency] Hurry, $name!\n",
+            "- [id = stable] Hello again, $name!\n",
         ));
         let module = parse_module(&source).expect("module parses");
         let rule = &module.rules[0];
@@ -1776,6 +1769,15 @@ mod tests {
             WeightSyntax::Dynamic(ref expression)
                 if matches!(expression.value(), WeightExpression::Name(name) if name == "urgency")
         ));
+        assert!(matches!(rule.productions[3].weight, WeightSyntax::Default));
+        assert_eq!(
+            rule.productions[3]
+                .authored_id
+                .as_ref()
+                .expect("id")
+                .value(),
+            "stable"
+        );
         assert!(matches!(
             rule.productions[0].body,
             BodySyntax::Parts(ref parts)

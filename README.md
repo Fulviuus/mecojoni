@@ -174,6 +174,7 @@ inputs:
   itemCount: number
   mood: Mood
   urgency: number
+  inputValue: number
 
 imports:
   common: "./common.meco"
@@ -343,6 +344,13 @@ exports: [pickup, greeting, warning]
 - [urgency] The alarm is spreading.
 - [weight = urgency, id = urgent-alarm] The alarm is spreading quickly.
 - [1] Everything is quiet.
+
+<!-- Compact expressions, ID-only metadata, and full metadata may be mixed. -->
+# weighted-by-context <- parameterValue: number
+- [weight = inputValue + parameterValue * 20] explicit expression
+- [inputValue + parameterValue * 20] compact expression
+- [id = stable-default] default weight with a stable ID
+- [weight = 3, id = static-three] static weight with a stable ID
 
 <!-- Empty output, optional text, and an explicitly delimited adjacent reference. -->
 # titled-greeting
@@ -669,6 +677,15 @@ production also needs a stable authored identity:
 
 ```meco
 - [weight = urgency, id = urgent-alarm] The alarm is spreading.
+```
+
+All supported metadata forms are:
+
+```meco
+- [weight = inputValue + parameterValue * 20] explicit expression
+- [inputValue + parameterValue * 20] compact expression
+- [id = stable-default] default weight (`1`) with a stable ID
+- [weight = 3, id = static-three] explicit weight with a stable ID
 ```
 
 The same expression works with a declared rule parameter, such as

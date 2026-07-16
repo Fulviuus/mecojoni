@@ -51,6 +51,49 @@ fn milestone5_package() -> PackageInput {
     }
 }
 
+#[test]
+fn filesystem_metadata_forms_evaluate_host_inputs_and_rule_parameters() {
+    let path = fixture_path("packages/metadata/root.meco");
+    let package = PackageInput {
+        root_id: "metadata".to_string(),
+        modules: vec![PackageSource {
+            canonical_id: "metadata".to_string(),
+            source: SourceFile::new(
+                SourceId::new(0),
+                "metadata/root.meco",
+                fs::read_to_string(path).expect("read metadata fixture"),
+            ),
+            resolved_imports: vec![],
+        }],
+    };
+    let grammar = compile_package(&package).expect("metadata fixture compiles");
+    let data = [DataBinding::new(
+        "inputValue".to_string(),
+        Value::Number(Rational::new(2, 1).expect("number")),
+    )];
+    let result = grammar
+        .generate_weighted(&GenerationRequest {
+            data: &data,
+            trace_selections: true,
+            ..GenerationRequest::with_seed(7)
+        })
+        .expect("metadata fixture generates");
+    let choice = result
+        .selections()
+        .iter()
+        .find(|selection| selection.rule() == "metadata.choice")
+        .expect("parameterized selection is traced");
+    let weights = choice
+        .eligible()
+        .iter()
+        .map(|candidate| (candidate.production_id(), candidate.base_weight()))
+        .collect::<Vec<_>>();
+    assert_eq!(weights[0], ("explicit", Rational::new(42, 1).expect("number")));
+    assert_eq!(weights[1].1, Rational::new(42, 1).expect("number"));
+    assert_eq!(weights[2], ("stable-default", Rational::ONE));
+    assert_eq!(weights[3], ("static-three", Rational::new(3, 1).expect("number")));
+}
+
 fn request_data(mood: &str, urgency: Rational, enabled: bool) -> Vec<DataBinding> {
     vec![
         DataBinding::new("playerName".to_string(), Value::Text("Rin".to_string())),
