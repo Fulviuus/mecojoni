@@ -6,15 +6,15 @@
   A Markdown-like language for compositional, localized generative text.
 </p>
 
-# Mecojoni v1
+# Mecojoni
 
-Mecojoni v1 is a readable, typed, modular language for generative dialogue and
+Mecojoni is a readable, typed, modular language for generative dialogue and
 text. It retains the useful core of a weighted context-free grammar—headings
 define rules and list items define alternatives—
 while adding the structure needed for game data, conditions, reuse, localization,
 and reliable long-running generation.
 
-> **Status:** the v1 source-language and compiled-artifact roadmaps are
+> **Status:** the current source-language and compiled-artifact roadmaps are
 > feature-complete. Representative native/WASM measurements justified freezing
 > the hostile-input-checked `bytecode/1` format and its single-WASM deployment
 > path. The
@@ -157,12 +157,12 @@ with every syntax change; if the documents temporarily disagree, this README win
 
 ## Quick start
 
-V1 source begins with a small, strict front-matter header. This sample has no
+Mecojoni source begins with a small, strict front-matter header. This sample has no
 default entry, so a host must request one of its exported rules explicitly.
 
 ```meco
 ---
-meco: 1
+meco: 1.0
 module: npc
 sampler: diverse/1
 
@@ -198,16 +198,16 @@ only when the `mood` input is `tense`. The argument values are data, not visible
 text; `&pickup-common` or `&pickup-alert` owns the complete rendered result.
 
 Add `entry: pickup` to a package root when it should have a default generation
-target. V1 never guesses a default from the first rule or the order of `exports`.
+target. Mecojoni never guesses a default from the first rule or the order of `exports`.
 
-## Complete v1 example corpus
+## Complete example corpus
 
-The following source is the canonical v1 syntax corpus. It intentionally places
+The following source is the canonical syntax corpus. It intentionally places
 many independent examples in one file so each form can be reviewed in context.
 
 ```meco
 ---
-meco: 1
+meco: 1.0
 module: npc
 sampler: diverse/1
 
@@ -440,13 +440,13 @@ exports: [pickup, greeting, warning]
 
 ## The `.meco` format
 
-`.meco` is the canonical v1 source extension used by repository fixtures,
+`.meco` is the canonical source extension used by repository fixtures,
 imports, examples, editor integration, and generated documentation. The portable
 parser still consumes host-supplied source independently of its filename.
 
 ### Front matter, modules, and entries
 
-Every module declares `meco: 1` and a `module` name. The header is a strict
+Every module declares `meco: 1.0` and a `module` name. The header is a strict
 Mecojoni schema, not general-purpose YAML: unknown or duplicate fields are
 errors, as are YAML tags, anchors, aliases, merges, and implicit values.
 
@@ -476,7 +476,7 @@ imports:
 A `# heading` defines a rule and each `-` item is a weighted alternative. Rule
 references expand inline and emit their result:
 
-Initial v1 identifiers are case-sensitive ASCII; terminal text may contain any
+Initial identifiers are case-sensitive ASCII; terminal text may contain any
 valid UTF-8. Unicode identifiers are deferred so the portable core does not carry
 normalization tables before a real authoring requirement justifies them.
 
@@ -799,10 +799,10 @@ Outside literals, Markdown comments are ignored:
 
 ## Sampling and reproducibility
 
-V1 exposes two runtime modes: independent `random` and repetition-resistant
-`varied`. V1 makes the policy names and versions explicit:
+Mecojoni exposes two runtime modes: independent `random` and repetition-resistant
+`varied`. Mecojoni makes the policy names and versions explicit:
 
-| V1 policy | Corresponding v1 behavior | Use |
+| Mecojoni policy | Corresponding behavior | Use |
 | --- | --- | --- |
 | `weighted/1` | `random` | Exact independent weighted CFG draws. |
 | `diverse/1` | `varied` | Stateful repetition resistance for player-facing text. |
@@ -822,7 +822,7 @@ immediate-reuse gap of one selection, a four-selection soft cooldown horizon,
 3–8 word edge fragments, 300 retained edge records, and 50,000 retained exact
 records. The edge and exact histories also have 4 MiB and 16 MiB canonical UTF-8
 logical-byte caps. These are versioned profile values, not hidden tuning constants.
-The default resource profile preserves v1's depth limit of 80 and expansion limit
+The default resource profile preserves a depth limit of 80 and expansion limit
 of 2,000 per candidate while also bounding output, sampling work, and rendered bytes.
 The complete profile and limit tables are normative in
 [SPECIFICATION.md](SPECIFICATION.md).
@@ -951,7 +951,7 @@ forbids unsafe code; the WASM adapter isolates the target allocator.
 JavaScript support targets `wasm32-unknown-unknown` through a dependency-light,
 handwritten linear-memory ABI and JavaScript/TypeScript wrapper for Deno and
 browsers. The WASM adapter supplies its global allocator. A C API is not part of
-the initial v1 scope.
+the initial scope.
 
 The implementation provides a parser with precise spans, an immutable compiled
 representation, typed Rust APIs, deterministic seeded sessions, structured
@@ -979,8 +979,8 @@ The implementation order and completion gates are tracked in
 ## Project structure
 
 ```text
-README.md                    V1 overview and canonical syntax corpus
-SPECIFICATION.md             Detailed v1 specification and implementation plan
+README.md                    Mecojoni overview and canonical syntax corpus
+SPECIFICATION.md             Detailed specification and implementation plan
 SYNTAX.md                    Normative lexical and complete source grammar
 INTERFACES.md                Package, WASM, JavaScript, and CLI contracts
 ROADMAP.md                   Phased implementation plan and completion gates
@@ -1035,7 +1035,7 @@ are executable as well. Static trace-off weighted rules use
 precomputed cumulative indexes, and production-ID collision checks are
 `O(n log n)`; both optimizations have committed native/WASM evidence. A production
 Fluent adapter and compound value records are explicitly deferred extensions, not
-unimplemented v1 release promises. The generic boundary is nevertheless exercised
+unimplemented release promises. The generic boundary is nevertheless exercised
 against real Fluent resources by a Rust-only dev-dependency integration test. See
 [COMPATIBILITY.md](COMPATIBILITY.md),
 [CONFORMANCE.md](CONFORMANCE.md), [RELEASE.md](RELEASE.md), the frozen

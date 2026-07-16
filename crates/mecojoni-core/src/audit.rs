@@ -208,7 +208,7 @@ fn word_ranges(text: &str) -> Vec<WordRange> {
 /// sentence-ending production in a parsed module.
 #[must_use]
 pub fn audit_composition(module: &ModuleSyntax) -> Vec<CompositionFinding> {
-    let profile = CompositionProfile::V1;
+    let profile = CompositionProfile::DEFAULT;
     let mut findings = Vec::new();
     for rule in &module.rules {
         for (index, production) in rule.productions.iter().enumerate() {
@@ -357,7 +357,7 @@ mod tests {
             SourceId::new(0),
             "audit.meco",
             concat!(
-                "---\nmeco: 1\nmodule: audit\n---\n",
+                "---\nmeco: 1.0\nmodule: audit\n---\n",
                 "# shell\n- The old pilot waited quietly.\n",
                 "# message\n- &localized <- name: $name\n",
             ),
@@ -377,7 +377,7 @@ mod tests {
             SourceId::new(0),
             "repetition.meco",
             concat!(
-                "---\nmeco: 1\nmodule: root\nentry: line\nexports: [line]\n---\n",
+                "---\nmeco: 1.0\nmodule: root\nentry: line\nexports: [line]\n---\n",
                 "# line\n- [weight = 1, id = shell] @opening @suffix\n",
                 "# opening\n- [weight = 1, id = opening] Fixed opening words\n",
                 "# suffix\n- [weight = 1, id = alpha] alpha\n",

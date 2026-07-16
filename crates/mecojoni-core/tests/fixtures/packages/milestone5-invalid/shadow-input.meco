@@ -1,5 +1,5 @@
 ---
-meco: 1
+meco: 1.0
 module: invalid
 entry: start
 inputs:

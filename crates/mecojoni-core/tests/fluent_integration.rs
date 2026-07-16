@@ -134,7 +134,7 @@ impl Formatter for FluentTestFormatter {
         Ok(FormatterResult {
             text,
             actual_locale: actual_locale.clone(),
-            environment_hash: format!("fluent-bundle/0.16.0|fluent-demo/v1|{actual_locale}"),
+            environment_hash: format!("fluent-bundle/0.16.0|fluent-demo/current|{actual_locale}"),
             diagnostics: vec![],
             work_units: 1,
             replayable: true,

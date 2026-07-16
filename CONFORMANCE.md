@@ -1,4 +1,4 @@
-# Mecojoni v1 conformance suite
+# Mecojoni conformance suite
 
 The source specification is backed by parser-independent files and cross-runtime
 contracts rather than snapshots of implementation internals.

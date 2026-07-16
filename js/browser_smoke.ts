@@ -39,7 +39,7 @@ async function run(): Promise<void> {
   const [root, common, expected] = await Promise.all([
     fetchText("/fixtures/weighted/root.meco"),
     fetchText("/fixtures/weighted/common.meco"),
-    fetchText("/fixtures/expected/weighted-seeds-v1.outputs"),
+    fetchText("/fixtures/expected/weighted-seeds.outputs"),
   ]);
   const compiled = meco.compilePackage({
     rootId: "root",
@@ -101,7 +101,7 @@ async function run(): Promise<void> {
   const [typedRoot, typedCommon, typedExpected] = await Promise.all([
     fetchText("/fixtures/milestone5/root.meco"),
     fetchText("/fixtures/milestone5/common.meco"),
-    fetchText("/fixtures/expected/milestone5-seeds-v1.outputs"),
+    fetchText("/fixtures/expected/milestone5-seeds.outputs"),
   ]);
   const typed = meco.compilePackage({
     rootId: "root",
@@ -193,7 +193,7 @@ async function run(): Promise<void> {
     return {
       text: pattern.replace("{hero}", hero.value).replace("{count}", String(number)),
       actualLocale,
-      environmentHash: `fixture/${actualLocale}/v1`,
+      environmentHash: `fixture/${actualLocale}/current`,
       workUnits: 1,
       replayable: true,
     };
@@ -245,7 +245,7 @@ async function run(): Promise<void> {
 
   const [diverseRoot, diverseExpected] = await Promise.all([
     fetchText("/fixtures/milestone7/root.meco"),
-    fetchText("/fixtures/expected/milestone7-sequence-v1.outputs"),
+    fetchText("/fixtures/expected/milestone7-sequence.outputs"),
   ]);
   const diverse = meco.compilePackage({
     rootId: "root",

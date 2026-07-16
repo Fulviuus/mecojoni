@@ -1,6 +1,6 @@
-# Mecojoni v1 Specification and Runtime Design
+# Mecojoni Specification and Runtime Design
 
-> This document is the implemented v1 design; explicitly deferred extensions are
+> This document is the implemented design; explicitly deferred extensions are
 > labeled as such. The portable workspace, complete recovering source parser, immutable
 > package compiler, iterative `weighted/1` generator, deterministic primitives,
 > typed request/guard/binding runtime, complete-message formatter boundary,
@@ -70,9 +70,9 @@ that genuinely require open-ended generation.
 7. **A dependency-free core.** Localization and editor integrations can be
    optional packages around a small embeddable runtime.
 
-## Design constraints learned from v1
+## Design constraints
 
-The existing prototype establishes several constraints for the v1 design:
+The existing prototype establishes several constraints for the design:
 
 - Candidate-state pollution is certain from the implementation. An exact `28.1%`
   repeat figure depends on an uncommitted fixture and was not independently
@@ -135,7 +135,7 @@ The design becomes much simpler when every kind of state has one owner.
 - a home-grown CLDR database or universal morphology engine;
 - automatic inflection of arbitrary player names;
 - unrestricted fragment-by-fragment localization;
-- a C API or C ABI in the initial v1 implementation;
+- a C API or C ABI in the initial implementation;
 - LLM-style open-ended generation.
 
 ### Implementation targets and dependency policy
@@ -156,7 +156,7 @@ The initial workspace has two product crates:
   TypeScript wrapper for browsers and Deno.
 
 An optional `std` CLI/tooling crate may be added after the core API stabilizes. A
-C adapter is not part of v1 scope. The core should begin with no third-party
+C adapter is not part of scope. The core should begin with no third-party
 dependencies; a dependency is accepted only when its safety, maintenance, or
 standards value clearly exceeds the portability and audit cost. Unsafe Rust is
 forbidden in the core and isolated to reviewed ABI code where it is unavoidable.
@@ -226,7 +226,7 @@ and types must explicitly prohibit source templating of host values.
 The package model provides:
 
 - a Markdown-style front-matter header in every source module, with the same exact
-  integer `meco: 1` value and package-wide version mismatches rejected;
+  integer `meco: 1.0` value and package-wide version mismatches rejected;
 - one declared module name per file;
 - canonical rule names of the form `<module>.<rule>`; in the example, module
   `npc` plus rule `pickup` is `npc.pickup`;
@@ -358,14 +358,14 @@ is no silent compare-and-swap retry against changed history.
 
 ## Language design
 
-The following author-facing syntax records the current format-1 proposal and the
+The following author-facing syntax records the format-1.0 proposal and the
 examples agreed during review. The implemented grammar is formalized in
 `SYNTAX.md` and checked against the README corpus plus parser-independent valid,
 invalid, exact-diagnostic, and AST fixtures.
 
 ```meco
 ---
-meco: 1
+meco: 1.0
 module: npc
 sampler: diverse/1
 
@@ -494,7 +494,7 @@ export all three instead.
 - Byte-oriented APIs require valid UTF-8; malformed byte sequences are
   errors. A JavaScript string API likewise rejects unpaired UTF-16 surrogates
   instead of silently replacing them. Physical line endings are normalized, but
-  terminal text is otherwise preserved exactly. The initial v1 implementation
+  terminal text is otherwise preserved exactly. The initial implementation
   uses case-sensitive ASCII identifiers and unrestricted UTF-8 terminal text.
   Unicode identifiers and normalization are deferred until a real authoring need
   justifies their tables or dependency cost.
@@ -1395,7 +1395,7 @@ using a warm session.
 | Source is the only specification | Normative EBNF/lexical spec and parser-independent fixtures | A second parser can pass the same conformance corpus |
 | Owned bytecode increases format and decoder surface; streaming is absent | Keep source authoritative; freeze only the measured owned format and pass source compilation/artifact decoding through the immutable `lowered-ir/1` invariant boundary | [`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md), semantic golden contracts, hostile-input suites, and recorded cross-runtime evidence |
 
-Frozen `bytecode/1` preserves the complete v1 runtime contract, including
+Frozen `bytecode/1` preserves the complete runtime contract, including
 dynamic expressions, bindings, messages, provenance, diverse state, snapshots,
 and replay identity. Its normative container layout and compatibility policy live in
 [`BYTECODE_FORMAT.md`](BYTECODE_FORMAT.md) and

@@ -1,4 +1,4 @@
-# Mecojoni v1 Host Interface Contracts
+# Mecojoni Host Interface Contracts
 
 Compatibility guarantees for these versioned surfaces are indexed in
 [`COMPATIBILITY.md`](COMPATIBILITY.md).

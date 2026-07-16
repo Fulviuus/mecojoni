@@ -231,7 +231,7 @@ impl Formatter for FixtureFormatter {
         Ok(FormatterResult {
             text: pattern,
             actual_locale: actual_locale.clone(),
-            environment_hash: format!("fixture/{actual_locale}/v1"),
+            environment_hash: format!("fixture/{actual_locale}/current"),
             diagnostics: vec![],
             work_units: 1,
             replayable: true,
@@ -277,7 +277,7 @@ fn milestone5_multimodule_fixture_generates_bindings_guards_and_frames() {
         .join("\n");
     assert_eq!(
         corpus,
-        fs::read_to_string(fixture_path("expected/milestone5-seeds-v1.outputs"))
+        fs::read_to_string(fixture_path("expected/milestone5-seeds.outputs"))
             .expect("read Milestone 5 corpus")
             .trim_end()
     );
@@ -348,7 +348,7 @@ fn loads_a_real_meco_file_from_the_filesystem() {
 
     assert_eq!(source.id(), SourceId::new(0));
     assert!(source.name().ends_with("minimal.meco"));
-    assert!(source.text().contains("meco: 1"));
+    assert!(source.text().contains("meco: 1.0"));
     assert!(source.text().contains("# greeting"));
     let header = parse_front_matter(&source).expect("fixture header parses");
     assert_eq!(header.module().value(), "hello");
@@ -488,7 +488,7 @@ fn weighted_package_matches_the_seeded_filesystem_corpus() {
         })
         .collect::<Vec<_>>()
         .join("\n");
-    let expected = fs::read_to_string(fixture_path("expected/weighted-seeds-v1.outputs"))
+    let expected = fs::read_to_string(fixture_path("expected/weighted-seeds.outputs"))
         .expect("read weighted output corpus");
 
     assert_eq!(actual, expected.trim_end());
@@ -611,7 +611,7 @@ fn load_compiler_invalid_package(case: &str) -> PackageInput {
 
 #[test]
 fn compiler_failures_match_codes_and_spans_from_filesystem_packages() {
-    let expected = fs::read_to_string(fixture_path("expected/compiler-invalid-v1.diags"))
+    let expected = fs::read_to_string(fixture_path("expected/compiler-invalid.diags"))
         .expect("read compiler diagnostic contract");
     let mut actual = Vec::new();
     for case in ["undefined", "private", "cycle"] {
@@ -683,7 +683,7 @@ fn deterministic_prng_matches_the_checked_in_cross_runtime_vector() {
 
 #[test]
 fn exact_numbers_match_the_checked_in_cross_runtime_cases() {
-    let cases_path = fixture_path("expected/rational-v1.cases");
+    let cases_path = fixture_path("expected/rational.cases");
     let cases = fs::read_to_string(cases_path).expect("read rational cases");
 
     for line in cases.lines() {
@@ -699,12 +699,12 @@ fn exact_numbers_match_the_checked_in_cross_runtime_cases() {
 
 #[test]
 fn named_profiles_match_the_checked_in_contract() {
-    let expected_path = fixture_path("expected/profiles-v1.contract");
+    let expected_path = fixture_path("expected/profiles.contract");
     let expected = fs::read_to_string(expected_path).expect("read profile contract");
-    let location = LocationProfile::V1;
-    let weighted = ResourceProfile::WEIGHTED_INTERACTIVE_V1;
-    let diverse = ResourceProfile::DIVERSE_INTERACTIVE_V1;
-    let composition = CompositionProfile::V1;
+    let location = LocationProfile::DEFAULT;
+    let weighted = ResourceProfile::WEIGHTED_INTERACTIVE;
+    let diverse = ResourceProfile::DIVERSE_INTERACTIVE;
+    let composition = CompositionProfile::DEFAULT;
     let actual = format!(
         concat!(
             "location/1 candidates={} gap={} horizon={} cooldown={}/{} edges={}..{} internal={} edge_window={} exact_window={} edge_bytes={} exact_bytes={}\n",
@@ -765,7 +765,7 @@ fn canonical_readme_corpus_parses_from_the_filesystem() {
     let readme_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../README.md");
     let readme = fs::read_to_string(readme_path).expect("read root README");
     let section = readme
-        .split_once("## Complete v1 example corpus")
+        .split_once("## Complete example corpus")
         .expect("canonical corpus section")
         .1;
     let source_text = section
@@ -892,7 +892,7 @@ fn canonical_readme_corpus_matches_the_checked_in_ast_prediction() {
     let readme_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../README.md");
     let readme = fs::read_to_string(readme_path).expect("read root README");
     let source_text = readme
-        .split_once("## Complete v1 example corpus")
+        .split_once("## Complete example corpus")
         .expect("canonical corpus section")
         .1
         .split_once("```meco\n")
@@ -1017,7 +1017,7 @@ fn composition_audit_matches_the_checked_in_finding_contract() {
 
 #[test]
 fn cli_contract_fixture_covers_every_stream_and_status_class() {
-    let contract_path = fixture_path("expected/cli-v1.contract");
+    let contract_path = fixture_path("expected/cli.contract");
     let contract = fs::read_to_string(contract_path).expect("read CLI contract");
     let rows = contract.lines().collect::<Vec<_>>();
     let interfaces_path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../INTERFACES.md");
@@ -1302,7 +1302,7 @@ fn assert_milestone7_sequence(
         ));
     }
     let actual = outputs.join("\n");
-    let expected = fs::read_to_string(fixture_path("expected/milestone7-sequence-v1.outputs"))
+    let expected = fs::read_to_string(fixture_path("expected/milestone7-sequence.outputs"))
         .expect("read Milestone 7 sequence");
     assert_eq!(actual, expected.trim_end());
 }
@@ -1394,7 +1394,7 @@ fn milestone8_provenance_audits_and_nonempty_replay_round_trip_from_filesystem()
     };
     let grammar =
         compile_package_with_manifest(&package, &manifest).expect("Milestone 8 package compiles");
-    let expected = fs::read_to_string(fixture_path("expected/milestone8-audit-v1.findings"))
+    let expected = fs::read_to_string(fixture_path("expected/milestone8-audit.findings"))
         .expect("read Milestone 8 audit findings");
     let actual = grammar
         .audit_composition()

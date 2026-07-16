@@ -24,7 +24,7 @@ pub struct LocationProfile {
 }
 
 impl LocationProfile {
-    pub const V1: Self = Self {
+    pub const DEFAULT: Self = Self {
         candidate_attempts: 12,
         hard_minimum_gap: 1,
         soft_cooldown_horizon: 4,
@@ -60,7 +60,7 @@ pub fn diversity_factor_16_16(descendants: u64) -> u32 {
 /// Returns [`RationalError`] only if the published profile constants cease to
 /// fit the `rational/1` budget.
 pub fn location_cooldown_multiplier(age: u32) -> Result<Rational, RationalError> {
-    let profile = LocationProfile::V1;
+    let profile = LocationProfile::DEFAULT;
     if age >= profile.soft_cooldown_horizon {
         return Ok(Rational::ONE);
     }
@@ -106,7 +106,7 @@ pub struct ResourceProfile {
 }
 
 impl ResourceProfile {
-    pub const WEIGHTED_INTERACTIVE_V1: Self = Self {
+    pub const WEIGHTED_INTERACTIVE: Self = Self {
         candidate_attempts: 1,
         maximum_depth_per_candidate: 80,
         maximum_expansions_per_candidate: 2_000,
@@ -119,7 +119,7 @@ impl ResourceProfile {
         maximum_formatter_work_units: 10_000,
     };
 
-    pub const DIVERSE_INTERACTIVE_V1: Self = Self {
+    pub const DIVERSE_INTERACTIVE: Self = Self {
         candidate_attempts: 12,
         maximum_depth_per_candidate: 80,
         maximum_expansions_per_candidate: 2_000,
@@ -141,7 +141,7 @@ pub struct CompositionProfile {
 }
 
 impl CompositionProfile {
-    pub const V1: Self = Self {
+    pub const DEFAULT: Self = Self {
         minimum_direct_references: 3,
         maximum_literal_run_words: 2,
         complete_messages_are_exempt: true,
@@ -159,7 +159,7 @@ mod tests {
 
     #[test]
     fn profile_aggregate_limits_cover_every_candidate() {
-        let diverse = ResourceProfile::DIVERSE_INTERACTIVE_V1;
+        let diverse = ResourceProfile::DIVERSE_INTERACTIVE;
 
         assert_eq!(
             diverse.maximum_aggregate_expansions,
@@ -173,9 +173,9 @@ mod tests {
 
     #[test]
     fn location_and_composition_contracts_match_the_published_values() {
-        assert_eq!(LocationProfile::V1.candidate_attempts, 12);
-        assert_eq!(LocationProfile::V1.exact_history_window, 50_000);
-        assert_eq!(CompositionProfile::V1.minimum_direct_references, 3);
+        assert_eq!(LocationProfile::DEFAULT.candidate_attempts, 12);
+        assert_eq!(LocationProfile::DEFAULT.exact_history_window, 50_000);
+        assert_eq!(CompositionProfile::DEFAULT.minimum_direct_references, 3);
     }
 
     #[test]

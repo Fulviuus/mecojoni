@@ -8,7 +8,7 @@ use crate::{
     Diagnostic, DiagnosticCode, MecoError, MecoResult, Severity, SourceFile, Span, Spanned,
 };
 
-/// Strict, dependency-free representation of a format-1 module header.
+/// Strict, dependency-free representation of a format-1.0 module header.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct FrontMatter {
     span: Span,
@@ -184,28 +184,28 @@ impl HeaderBuilder {
     }
 }
 
-/// Parses only the framed format-1 header. Rule parsing starts at the returned
+/// Parses only the framed format-1.0 header. Rule parsing starts at the returned
 /// header span's end in the next compiler phase.
 ///
 /// # Errors
 ///
 /// Returns [`MecoError`] for a missing or unterminated header, invalid strict
 /// mapping syntax, unknown or duplicate fields, invalid identifiers and values,
-/// or a format version other than exactly `1`.
+/// or a format version other than exactly `1.0`.
 pub fn parse_front_matter(source: &SourceFile) -> MecoResult<FrontMatter> {
     let text = source.text();
     let first = next_line(text, 0).ok_or_else(|| {
         failure(
             DiagnosticCode::HEADER_MISSING,
             empty_span(source, 0),
-            "a v1 module must begin with an exact `---` header delimiter",
+            "a Mecojoni module must begin with an exact `---` header delimiter",
         )
     })?;
     if first.text != "---" {
         return Err(failure(
             DiagnosticCode::HEADER_MISSING,
             line_span(source, first),
-            "a v1 module must begin with an exact `---` header delimiter",
+            "a Mecojoni module must begin with an exact `---` header delimiter",
         ));
     }
 
@@ -269,7 +269,7 @@ pub fn parse_front_matter(source: &SourceFile) -> MecoResult<FrontMatter> {
         failure(
             DiagnosticCode::HEADER_REQUIRED_FIELD,
             required_at,
-            "front matter requires `meco: 1`",
+            "front matter requires `meco: 1.0`",
         )
     })?;
     let module = builder.module.ok_or_else(|| {
@@ -351,11 +351,11 @@ fn parse_top_level(
 
     match field.key {
         "meco" => {
-            if value != "1" {
+            if value != "1.0" {
                 return Err(failure(
                     DiagnosticCode::UNSUPPORTED_VERSION,
                     value_span,
-                    "format version must be the exact integer `1`",
+                    "format version must be exactly `1.0`",
                 ));
             }
             builder.version = Some(Spanned::new(1, value_span));
@@ -752,7 +752,7 @@ mod tests {
     fn parses_the_canonical_header_shape() {
         let header = parse(concat!(
             "---\n",
-            "meco: 1\n",
+            "meco: 1.0\n",
             "module: npc\n",
             "sampler: diverse/1\n",
             "types:\n",
@@ -777,24 +777,24 @@ mod tests {
 
     #[test]
     fn accepts_crlf_without_losing_original_byte_coordinates() {
-        let header = parse("---\r\nmeco: 1\r\nmodule: npc\r\n---\r\n# greeting\r\n");
+        let header = parse("---\r\nmeco: 1.0\r\nmodule: npc\r\n---\r\n# greeting\r\n");
 
         assert_eq!(header.module().span().byte_len(), 3);
-        assert_eq!(header.span().end().byte(), 32);
+        assert_eq!(header.span().end().byte(), 34);
     }
 
     #[test]
     fn rejects_unknown_duplicate_and_missing_fields() {
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: npc\nyaml: nope\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: npc\nyaml: nope\n---\n"),
             DiagnosticCode::HEADER_UNKNOWN_FIELD
         );
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: npc\nmodule: again\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: npc\nmodule: again\n---\n"),
             DiagnosticCode::HEADER_DUPLICATE_FIELD
         );
         assert_eq!(
-            error_code("---\nmeco: 1\n---\n"),
+            error_code("---\nmeco: 1.0\n---\n"),
             DiagnosticCode::HEADER_REQUIRED_FIELD
         );
     }
@@ -802,11 +802,11 @@ mod tests {
     #[test]
     fn rejects_yaml_features_and_non_ascii_identifiers() {
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: &npc npc\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: &npc npc\n---\n"),
             DiagnosticCode::INVALID_IDENTIFIER
         );
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: naïve\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: naïve\n---\n"),
             DiagnosticCode::INVALID_IDENTIFIER
         );
     }
@@ -814,11 +814,11 @@ mod tests {
     #[test]
     fn rejects_wrong_version_and_indentation() {
         assert_eq!(
-            error_code("---\nmeco: 1.0\nmodule: npc\n---\n"),
+            error_code("---\nmeco: 1\nmodule: npc\n---\n"),
             DiagnosticCode::UNSUPPORTED_VERSION
         );
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: npc\ntypes:\n Mood: [calm]\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: npc\ntypes:\n Mood: [calm]\n---\n"),
             DiagnosticCode::HEADER_INDENT
         );
     }
@@ -826,13 +826,13 @@ mod tests {
     #[test]
     fn rejects_noncanonical_lists_and_quoted_paths() {
         assert_eq!(
-            error_code("---\nmeco: 1\nmodule: npc\nexports: [ greeting]\n---\n"),
+            error_code("---\nmeco: 1.0\nmodule: npc\nexports: [ greeting]\n---\n"),
             DiagnosticCode::HEADER_VALUE
         );
         assert_eq!(
             error_code(concat!(
                 "---\n",
-                "meco: 1\n",
+                "meco: 1.0\n",
                 "module: npc\n",
                 "imports:\n",
                 "  common: \"a\"b\"\n",

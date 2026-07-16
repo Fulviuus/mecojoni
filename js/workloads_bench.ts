@@ -54,7 +54,7 @@ for (const workload of workloads()) {
     };
   }
   console.log(JSON.stringify({
-    engine: "v1-wasm",
+    engine: "wasm",
     version: workloadVersion,
     scenario: workload.name,
     class: workload.class,
@@ -112,7 +112,7 @@ for (const workload of workloads()) {
     };
   }
   console.log(JSON.stringify({
-    engine: "v1-wasm-bytecode",
+    engine: "wasm-bytecode",
     version: workloadVersion,
     scenario: workload.name,
     class: workload.class,
@@ -204,7 +204,7 @@ for (let sample = 0; sample < samples; sample++) {
   };
 }
 console.log(JSON.stringify({
-  engine: "v1-wasm",
+  engine: "wasm",
   version: "startup/1",
   scenario: "harbor-dialogue",
   class: "representative",
@@ -260,7 +260,7 @@ for (let sample = 0; sample < samples; sample++) {
   };
 }
 console.log(JSON.stringify({
-  engine: "v1-wasm-bytecode",
+  engine: "wasm-bytecode",
   version: "startup/1",
   scenario: "harbor-dialogue",
   class: "representative",

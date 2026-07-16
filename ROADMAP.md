@@ -1,4 +1,4 @@
-# Mecojoni v1 Roadmap
+# Mecojoni Roadmap
 
 This roadmap turns the language in `README.md` and the runtime design in
 `SPECIFICATION.md` into testable implementation milestones. The README is the
@@ -146,7 +146,7 @@ Deno, and a browser, with equivalent structured diagnostics.
 
 ## Milestone 5 — Types, guards, parameters, captures, and bindings
 
-Implement the v1 authoring features that solve v1's main composition limits.
+Implement the authoring features that solve Mecojoni's main composition limits.
 
 - [x] Implement core scalar types, finite enums, immutable request data, and
   runtime type validation.
@@ -252,7 +252,7 @@ Build tools only after the core contracts are stable.
 - [x] Add initial editor grammar and language-server support if demanded by real
   authoring use.
 
-The checked-in TextMate grammar covers current lexical use. Semantic editor
+The checked-in TextMate grammar covers the current lexical syntax. Semantic editor
 diagnostics invoke `meco check`; no real authoring requirement yet justifies a
 separate incremental LSP transport or a duplicate parser.
 

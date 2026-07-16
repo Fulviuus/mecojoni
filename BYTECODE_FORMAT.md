@@ -1,6 +1,6 @@
 # Mecojoni `bytecode/1` format
 
-`bytecode/1` is the frozen, little-endian compiled container produced by the v1
+`bytecode/1` is the frozen, little-endian compiled container produced by the current
 toolchain. Source remains authoritative; `.mecob` is a reproducible deployment
 artifact. The decoder treats every byte as untrusted and constructs no partial
 grammar.
@@ -8,7 +8,7 @@ grammar.
 ## Compatibility
 
 - Magic is `MECB`; container major/minor is `1.0`.
-- The source language is exactly `meco: 1`, core API is `2`, and the current
+- The source language is exactly `meco: 1.0`, core API is `1`, and the current
   lowered contract is `lowered-ir/1`.
 - The 16-byte runtime fingerprint is `meco-bc1-0000001`. A runtime accepts only
   that fingerprint. Compatible implementations preserve it; an incompatible
@@ -33,8 +33,8 @@ The fixed 72-byte header is:
 | 12 | 4 | profile: full `0`, mapped `1`, stripped `2` |
 | 16 | 8 | exact total bytes |
 | 24 | 4 | section count `1` |
-| 28 | 4 | source version `2` |
-| 32 | 4 | core API version `2` |
+| 28 | 4 | source version `1` (the binary representation of source format `1.0`) |
+| 32 | 4 | core API version `1` |
 | 36 | 4 | reserved zero |
 | 40 | 8 | semantic package hash |
 | 48 | 8 | bytecode content hash |

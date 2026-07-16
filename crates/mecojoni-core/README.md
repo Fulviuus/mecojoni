@@ -1,6 +1,6 @@
 # mecojoni-core
 
-`mecojoni-core` is the dependency-free, `#![no_std] + alloc`, unsafe-free v1
+`mecojoni-core` is the dependency-free, `#![no_std] + alloc`, unsafe-free
 compiler and runtime. Hosts own files, import resolution, seeds, typed data,
 localized formatter resources, persistence, clocks, and concurrency ordering.
 
@@ -30,7 +30,7 @@ use mecojoni_core::{
     compile_package,
 };
 
-let source = "---\nmeco: 1\nmodule: hello\nentry: greeting\nexports: [greeting]\n---\n\n# greeting\n- Hello!\n";
+let source = "---\nmeco: 1.0\nmodule: hello\nentry: greeting\nexports: [greeting]\n---\n\n# greeting\n- Hello!\n";
 let package = PackageInput {
     root_id: "hello".into(),
     modules: vec![PackageSource {

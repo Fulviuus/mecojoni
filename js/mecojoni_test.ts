@@ -164,7 +164,7 @@ Deno.test("Deno compiles and generates the native weighted seed corpus", async (
     }
     const expected = await Deno.readTextFile(
       new URL(
-        "../crates/mecojoni-core/tests/fixtures/expected/weighted-seeds-v1.outputs",
+        "../crates/mecojoni-core/tests/fixtures/expected/weighted-seeds.outputs",
         import.meta.url,
       ),
     );
@@ -246,7 +246,7 @@ Deno.test("Deno executes typed data, guards, dynamic weights, calls, and binding
     }
     const expected = await Deno.readTextFile(
       new URL(
-        "../crates/mecojoni-core/tests/fixtures/expected/milestone5-seeds-v1.outputs",
+        "../crates/mecojoni-core/tests/fixtures/expected/milestone5-seeds.outputs",
         import.meta.url,
       ),
     );
@@ -305,7 +305,7 @@ Deno.test("Deno resolves complete messages through the synchronous locale protoc
     return {
       text: pattern.replace("{hero}", hero.value).replace("{count}", String(number)),
       actualLocale,
-      environmentHash: `fixture/${actualLocale}/v1`,
+      environmentHash: `fixture/${actualLocale}/current`,
       diagnostics: [],
       workUnits: 1,
       replayable: true,
@@ -352,7 +352,7 @@ Deno.test("Deno resolves complete messages through the synchronous locale protoc
       formatter: () => ({
         text: "wrong locale",
         actualLocale: "de",
-        environmentHash: "fixture/de/v1",
+        environmentHash: "fixture/de/current",
         workUnits: 1,
         replayable: true,
       }),
@@ -418,7 +418,7 @@ Deno.test("Deno diverse sessions match the transactional Rust sequence", async (
     }
     const expected = await Deno.readTextFile(
       new URL(
-        "../crates/mecojoni-core/tests/fixtures/expected/milestone7-sequence-v1.outputs",
+        "../crates/mecojoni-core/tests/fixtures/expected/milestone7-sequence.outputs",
         import.meta.url,
       ),
     );

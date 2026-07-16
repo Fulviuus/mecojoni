@@ -38,7 +38,7 @@ virtual machine.
   discriminants as an interchange format.
 - The first version does not promise streaming execution, memory mapping, or
   in-place patching.
-- `meco: 1` is the source format accepted by the initial compiler.
+- `meco: 1.0` is the source format accepted by the initial compiler.
 
 ## Recommended delivery model
 
@@ -208,7 +208,7 @@ meaningful bytecode hashes.
 - Use a fixed section order, fixed record widths, and zero-filled reserved fields.
 - Store exact reduced rational `(i64 numerator, u64 denominator)` pairs.
 - Preserve authored production IDs verbatim and derived IDs under
-  `production-fnv1a64/1`.
+  `production-fnv-a64/1`.
 - Encode booleans as exactly `0` or `1`; reject other values.
 - Store enum values as their declared type and member indexes, not host enum
   discriminants.
@@ -614,7 +614,7 @@ documented unsupported-feature diagnostic; malformed artifacts fail safely.
 - Add debug profile behavior and capability diagnostics.
 - Run native, `thumbv6m-none-eabi`, and WASM checks.
 
-**Exit:** the entire current v1 semantic corpus is source/bytecode equivalent.
+**Exit:** the complete semantic corpus is source/bytecode equivalent.
 
 ### Milestone B4 — Add tooling and external WASM loading
 

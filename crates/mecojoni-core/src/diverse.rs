@@ -209,7 +209,7 @@ impl RepetitionSnapshot {
             let rule = decoder.string()?;
             let count = decoder.len()?;
             if count
-                > usize::try_from(LocationProfile::V1.soft_cooldown_horizon).unwrap_or(usize::MAX)
+                > usize::try_from(LocationProfile::DEFAULT.soft_cooldown_horizon).unwrap_or(usize::MAX)
             {
                 return Err(snapshot_limit(
                     "structural history exceeds its profile window",
@@ -223,7 +223,7 @@ impl RepetitionSnapshot {
         }
         let exact_count = decoder.len()?;
         if exact_count
-            > usize::try_from(LocationProfile::V1.exact_history_window).unwrap_or(usize::MAX)
+            > usize::try_from(LocationProfile::DEFAULT.exact_history_window).unwrap_or(usize::MAX)
         {
             return Err(snapshot_limit("exact history exceeds its profile window"));
         }
@@ -235,7 +235,7 @@ impl RepetitionSnapshot {
             .iter()
             .map(|value| string_bytes(value))
             .fold(0_u64, u64::saturating_add)
-            > LocationProfile::V1.exact_history_logical_bytes
+            > LocationProfile::DEFAULT.exact_history_logical_bytes
         {
             return Err(snapshot_limit(
                 "exact history exceeds its profile logical-byte budget",
@@ -243,7 +243,7 @@ impl RepetitionSnapshot {
         }
         let edge_count = decoder.len()?;
         if edge_count
-            > usize::try_from(LocationProfile::V1.edge_history_window).unwrap_or(usize::MAX)
+            > usize::try_from(LocationProfile::DEFAULT.edge_history_window).unwrap_or(usize::MAX)
         {
             return Err(snapshot_limit("edge history exceeds its profile window"));
         }
@@ -261,7 +261,7 @@ impl RepetitionSnapshot {
             .flat_map(|phrase| phrase.iter())
             .map(|value| string_bytes(value))
             .fold(0_u64, u64::saturating_add)
-            > LocationProfile::V1.edge_history_logical_bytes
+            > LocationProfile::DEFAULT.edge_history_logical_bytes
         {
             return Err(snapshot_limit(
                 "edge history exceeds its profile logical-byte budget",
@@ -530,7 +530,7 @@ struct RepetitionData {
 
 impl RepetitionData {
     fn new_location() -> Self {
-        let profile = LocationProfile::V1;
+        let profile = LocationProfile::DEFAULT;
         Self {
             revision: 0,
             structural: BTreeMap::new(),
@@ -726,7 +726,7 @@ impl RepetitionStore {
     fn commit(&mut self, selections: &[(String, String)], text: &str) {
         let data = Rc::make_mut(&mut self.data);
         let horizon =
-            usize::try_from(LocationProfile::V1.soft_cooldown_horizon).unwrap_or(usize::MAX);
+            usize::try_from(LocationProfile::DEFAULT.soft_cooldown_horizon).unwrap_or(usize::MAX);
         for (rule, production) in selections {
             let history = data.structural.entry(rule.clone()).or_default();
             history.push_back(production.clone());
@@ -832,7 +832,7 @@ impl SamplerSession {
         store: &mut RepetitionStore,
         request: &DiverseGenerationRequest<'_>,
     ) -> MecoResult<DiverseResult> {
-        let attempts = LocationProfile::V1.candidate_attempts;
+        let attempts = LocationProfile::DEFAULT.candidate_attempts;
         let pre_session = self.snapshot();
         let pre_repetition_revision = store.revision();
         let pre_repetition_hash = store.state_hash();
@@ -1141,7 +1141,7 @@ fn normalize_text(text: &str) -> String {
 
 fn edge_fragments(text: &str) -> Vec<String> {
     let words = word_tokens(text);
-    let profile = LocationProfile::V1;
+    let profile = LocationProfile::DEFAULT;
     let minimum = usize::try_from(profile.minimum_edge_words).unwrap_or(usize::MAX);
     let maximum = usize::try_from(profile.maximum_edge_words).unwrap_or(usize::MAX);
     let mut fragments = Vec::new();
@@ -1522,8 +1522,8 @@ mod tests {
     #[test]
     fn location_exact_window_evicts_at_its_published_boundary() {
         let mut history =
-            CountedHistory::with_limits(LocationProfile::V1.exact_history_window, u64::MAX);
-        for index in 0..=LocationProfile::V1.exact_history_window {
+            CountedHistory::with_limits(LocationProfile::DEFAULT.exact_history_window, u64::MAX);
+        for index in 0..=LocationProfile::DEFAULT.exact_history_window {
             history.push(index.to_string());
         }
         assert_eq!(history.entries.len(), 50_000);
@@ -1542,8 +1542,8 @@ mod tests {
         assert_eq!(history.count("shared"), 1);
 
         let mut location =
-            FragmentHistory::with_limits(LocationProfile::V1.edge_history_window, u64::MAX);
-        for index in 0..=LocationProfile::V1.edge_history_window {
+            FragmentHistory::with_limits(LocationProfile::DEFAULT.edge_history_window, u64::MAX);
+        for index in 0..=LocationProfile::DEFAULT.edge_history_window {
             location.push(alloc::vec![index.to_string()]);
         }
         assert_eq!(location.entries.len(), 300);
@@ -1555,7 +1555,7 @@ mod tests {
         let source = SourceFile::new(
             SourceId::new(0),
             "busy.meco",
-            "---\nmeco: 1\nmodule: busy\nentry: line\nexports: [line]\n---\n# line\n- ok\n",
+            "---\nmeco: 1.0\nmodule: busy\nentry: line\nexports: [line]\n---\n# line\n- ok\n",
         );
         let grammar = compile_package(&PackageInput {
             root_id: "root".to_string(),
@@ -1587,7 +1587,7 @@ mod tests {
             SourceId::new(0),
             "snapshot.meco",
             concat!(
-                "---\nmeco: 1\nmodule: snapshot\nentry: line\nexports: [line]\n---\n",
+                "---\nmeco: 1.0\nmodule: snapshot\nentry: line\nexports: [line]\n---\n",
                 "# line\n- Alpha signal.\n- Beta signal.\n- Gamma signal.\n",
             ),
         );

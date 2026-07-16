@@ -1,4 +1,4 @@
-# Mecojoni v1 benchmark contract
+# Mecojoni benchmark contract
 
 `workloads/1` is a committed, code-generated suite shared by native Rust and
 Deno/WASM. It separates realistic and adversarial shapes:
@@ -34,7 +34,7 @@ The complete first cross-runtime result is checked in as
 [`benchmarks/results/2026-07-16-darwin-arm64.json`](benchmarks/results/2026-07-16-darwin-arm64.json).
 The file includes all six generated shapes plus the manually authored,
 multi-module Harbor package under [`benchmarks/packages/harbor`](benchmarks/packages/harbor).
-The filename `operations-v1.contract` means version 1 of the operation contract.
+The file `operations.contract` freezes the operation contract.
 
 The first source-versus-`bytecode/0` Harbor result is recorded separately as
 [`benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json`](benchmarks/results/2026-07-16-bytecode0-darwin-arm64.json).
@@ -83,7 +83,7 @@ of linear-memory growth after warm generation.
 
 ## Cross-platform gate
 
-[`operations-v1.contract`](crates/mecojoni-benchmarks/baselines/operations-v1.contract)
+[`operations.contract`](crates/mecojoni-benchmarks/baselines/operations.contract)
 freezes source size, rule/production counts, artifact hash, seed-zero text,
 expansions, and sampler words. Rust filesystem integration and Deno/WASM tests
 must match it exactly. This zero-tolerance operation gate is meaningful across

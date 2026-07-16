@@ -40,10 +40,10 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/expected/weighted-seeds-v1.outputs",
+    "/fixtures/expected/weighted-seeds.outputs",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/expected/weighted-seeds-v1.outputs",
+        "crates/mecojoni-core/tests/fixtures/expected/weighted-seeds.outputs",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
@@ -80,10 +80,10 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/expected/milestone5-seeds-v1.outputs",
+    "/fixtures/expected/milestone5-seeds.outputs",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/expected/milestone5-seeds-v1.outputs",
+        "crates/mecojoni-core/tests/fixtures/expected/milestone5-seeds.outputs",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",
@@ -130,10 +130,10 @@ const routes = new Map<string, { path: URL; contentType: string }>([
     },
   ],
   [
-    "/fixtures/expected/milestone7-sequence-v1.outputs",
+    "/fixtures/expected/milestone7-sequence.outputs",
     {
       path: new URL(
-        "crates/mecojoni-core/tests/fixtures/expected/milestone7-sequence-v1.outputs",
+        "crates/mecojoni-core/tests/fixtures/expected/milestone7-sequence.outputs",
         workspace,
       ),
       contentType: "text/plain; charset=utf-8",

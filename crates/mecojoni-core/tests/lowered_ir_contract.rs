@@ -53,7 +53,7 @@ fn filesystem_package_pins_the_lowered_runtime_boundary() {
     );
     let expected = fs::read_to_string(
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/expected/lowered-ir-v1.contract"),
+            .join("tests/fixtures/expected/lowered-ir.contract"),
     )
     .expect("read lowered contract");
     assert_eq!(contract, expected);

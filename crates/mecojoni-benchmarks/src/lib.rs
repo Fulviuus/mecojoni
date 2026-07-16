@@ -138,7 +138,7 @@ pub fn workloads() -> Vec<Workload> {
 
 fn header(module: &str) -> String {
     format!(
-        "---\nmeco: 1\nmodule: {module}\nentry: root\nsampler: weighted/1\nexports: [root]\n---\n\n"
+        "---\nmeco: 1.0\nmodule: {module}\nentry: root\nsampler: weighted/1\nexports: [root]\n---\n\n"
     )
 }
 

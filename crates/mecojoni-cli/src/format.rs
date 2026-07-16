@@ -8,7 +8,7 @@ use mecojoni_core::{SourceFile, SourceId, parse_module};
 ///
 /// # Errors
 ///
-/// Returns the parser's diagnostics when the input is not valid v1 source.
+/// Returns the parser's diagnostics when the input is not valid Mecojoni source.
 pub fn format_source(source: &str, name: &str) -> Result<String, mecojoni_core::MecoError> {
     let file = SourceFile::new(SourceId::new(0), name, source);
     parse_module(&file)?;
@@ -21,7 +21,7 @@ mod tests {
 
     #[test]
     fn formatter_preserves_comments_blocks_and_literal_edge_spaces_exactly() {
-        let source = "---\nmeco: 1\nmodule: fmt\nentry: line\n---\n\n<!-- keep -->\n# line\n- \" edge \"@tail\n\n# tail\n- |raw-\n  $literal\n";
+        let source = "---\nmeco: 1.0\nmodule: fmt\nentry: line\n---\n\n<!-- keep -->\n# line\n- \" edge \"@tail\n\n# tail\n- |raw-\n  $literal\n";
         assert_eq!(format_source(source, "fmt.meco").unwrap(), source);
     }
 }

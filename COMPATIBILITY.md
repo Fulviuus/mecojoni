@@ -1,10 +1,10 @@
-# Mecojoni v1 compatibility policy
+# Mecojoni compatibility policy
 
 These identifiers are compatibility contracts, not marketing labels.
 
 | Surface | Current contract | Compatible evolution |
 | --- | --- | --- |
-| Source language | `meco: 1` | Clarifications and new optional front-matter fields only when old valid source keeps its meaning; incompatible syntax requires `meco: 2`. |
+| Source language | `meco: 1.0` | Clarifications and new optional front-matter fields only when old valid source keeps its meaning; incompatible syntax requires `meco: 2`. |
 | Rust semantic API | `API_VERSION = 1` | Additive APIs before crate publication; removals or semantic changes require a major crate version and documented compatibility notes. |
 | Rational arithmetic | `rational/1` | Exact vectors cannot change under the same identifier. |
 | PRNG | `splitmix64/1` | Seed-to-word vectors cannot change. |
@@ -13,7 +13,7 @@ These identifiers are compatibility contracts, not marketing labels.
 | Composition audit | `composition/1` | Thresholds/tokenization require a new profile identifier. |
 | Text normalization | `ascii-fold-whitespace/1` | Exact normalized keys cannot change. |
 | Fragment tokenizer | `scalar-word/1` | Fragment boundaries cannot change. |
-| Production IDs | `production-fnv1a64/1` | Authored IDs remain verbatim; derived IDs may change only under a new hash contract and explicit state migration. |
+| Production IDs | `production-fnv-a64/1` | Authored IDs remain verbatim; derived IDs may change only under a new hash contract and explicit state migration. |
 | WASM ABI/wire | ABI `1`, wire `1` | New exports and operation numbers are additive. Existing signatures, handle ownership, payload fields, and operation meanings cannot change. Unknown trailing input remains an error. |
 | Snapshots | `snapshot/1`, `MECS` / `MECR` | Existing bytes decode identically. New incompatible state requires a new version and fails closed in old readers. |
 | Compiled artifacts | `bytecode/1`, `MECB` 1.0, `meco-bc1-0000001` | Existing canonical bytes decode identically under the exact fingerprint. Changed tags, records, hashes, limits, or lowered semantics require `bytecode/2`. |

@@ -87,7 +87,7 @@ export function packageDescription(workload: Workload): PackageDescription {
 }
 
 function header(module: string): string {
-  return `---\nmeco: 1\nmodule: ${module}\nentry: root\nsampler: weighted/1\nexports: [root]\n---\n\n`;
+  return `---\nmeco: 1.0\nmodule: ${module}\nentry: root\nsampler: weighted/1\nexports: [root]\n---\n\n`;
 }
 
 function flat(alternatives: number): string {

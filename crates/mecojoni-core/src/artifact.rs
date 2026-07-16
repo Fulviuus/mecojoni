@@ -1293,7 +1293,7 @@ mod tests {
                 source: SourceFile::new(
                     SourceId::new(0),
                     "tiny.meco",
-                    "---\nmeco: 1\nmodule: tiny\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
+                    "---\nmeco: 1.0\nmodule: tiny\nentry: line\nexports: [line]\n---\n\n# line\n- hello\n",
                 ),
                 resolved_imports: vec![],
             }],

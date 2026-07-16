@@ -1,4 +1,4 @@
-# Mecojoni v1 release gate
+# Mecojoni release gate
 
 The implementation is feature-complete against `ROADMAP.md`. Before an actual
 distribution, run the commands in `CONFORMANCE.md` and verify:
@@ -8,7 +8,7 @@ distribution, run the commands in `CONFORMANCE.md` and verify:
 - every filesystem, subprocess, Deno, and browser test passes;
 - the `thumbv6m-none-eabi` core and release WASM artifact build;
 - generated Rust API docs contain no warnings;
-- `operations-v1.contract` has no unexplained drift;
+- `operations.contract` has no unexplained drift;
 - `BYTECODE_FORMAT.md` matches golden artifacts and the exact runtime fingerprint;
 - native benchmark changes include before/after evidence and WASM has zero live
   ABI allocations/handles after disposal;
