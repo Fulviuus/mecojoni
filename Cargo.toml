@@ -12,6 +12,7 @@ version = "0.0.0"
 edition = "2024"
 rust-version = "1.85"
 publish = false
+license = "MPL-2.0"
 
 [workspace.lints.rust]
 unsafe_code = "deny"
