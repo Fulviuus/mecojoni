@@ -109,9 +109,8 @@ target. V2 never guesses a default from the first rule or the order of `exports`
 
 ## Complete v2 example corpus
 
-[`test.meco.md`](test.meco.md) is the canonical syntax corpus. It intentionally
-places many independent examples in one file so each form can be reviewed in
-context.
+The following source is the canonical v2 syntax corpus. It intentionally places
+many independent examples in one file so each form can be reviewed in context.
 
 ```meco
 ---
@@ -133,6 +132,9 @@ imports:
 exports: [pickup, greeting, warning]
 ---
 
+<!-- No entry is declared: a caller must select an exported rule. -->
+
+<!-- Arguments after <- supply data; they are not visible output themselves. -->
 # pickup
 - [3] &pickup-common <- player: $playerName, count: $itemCount
 - [1] {mood is tense}
@@ -140,9 +142,11 @@ exports: [pickup, greeting, warning]
     player: $playerName
     count: $itemCount
 
+<!-- An emitting capture selects once, emits once, then makes $hero reusable. -->
 # local-intro
 - @{common.name as hero} arrived. $hero looked tired.
 
+<!-- Braced clauses are silent. Guards come before bindings. -->
 # localized-arrival
 - {common.name as hero}
   &arrival <- hero: $hero
@@ -173,11 +177,12 @@ exports: [pickup, greeting, warning]
   {common.name as companion}
   &arrival <- hero: $hero, $companion
 
-<!--Basic composition and public rules.-->
+<!-- Basic composition and public rules. -->
 # greeting
 - [3] @salutation, @person!
 - [1] @person, @observation.
 
+<!-- The header declares a parameter; <- at the call site supplies it. -->
 # greetings <- name: text
 - Hello, $name!
 - Welcome back, $name!
@@ -203,7 +208,7 @@ exports: [pickup, greeting, warning]
 - the market is unusually quiet
 - today feels promising
 
-<!--A minimal subject-predicate grammar.-->
+<!-- A minimal subject-predicate grammar. -->
 # sentence
 - @subject @predicate.
 
@@ -215,13 +220,13 @@ exports: [pickup, greeting, warning]
 - is waiting
 - found the missing tool
 
-<!--Ordinary unweighted alternatives.-->
+<!-- Ordinary unweighted alternatives. -->
 # temperature
 - cold
 - mild
 - uncomfortably warm
 
-<!--References embedded in terminal text.-->
+<!-- References embedded in terminal text. -->
 # report
 - The @device is @condition.
 
@@ -233,14 +238,14 @@ exports: [pickup, greeting, warning]
 - offline
 - making a strange noise
 
-<!--Integer and decimal relative weights. An omitted weight is 1.-->
+<!-- Integer and decimal relative weights. An omitted weight is 1. -->
 # weighted-mood
 - [6] calm
 - [3] tired
 - [1] furious
 - [0.5] cautiously optimistic
 
-<!--Empty output, optional text, and an explicitly delimited adjacent reference.-->
+<!-- Empty output, optional text, and an explicitly delimited adjacent reference. -->
 # titled-greeting
 - Welcome, @{name}@title-option.
 
@@ -256,7 +261,7 @@ exports: [pickup, greeting, warning]
 - Captain
 - Doctor
 
-<!--A delimited reference separates the rule name from a literal suffix.-->
+<!-- A delimited reference separates the rule name from a literal suffix. -->
 # creature-count
 - Several @{creature}s arrived.
 
@@ -264,7 +269,7 @@ exports: [pickup, greeting, warning]
 - traveller
 - maintenance drone
 
-<!--Productive recursion with a strongly preferred terminating production.-->
+<!-- Productive recursion with a strongly preferred terminating production. -->
 # inventory
 - [5] @item
 - [1] @item, @inventory
@@ -277,20 +282,20 @@ exports: [pickup, greeting, warning]
 # calm-line
 - Everything is under control.
 
-<!--Escape a sigil when it should be emitted literally.-->
+<!-- Escape a sigil when it should be emitted literally. -->
 # contact
 - Send a message to pilot\@example.invalid.
 
-<!--A raw string does not interpret sigils or escape sequences.-->
+<!-- A raw string does not interpret sigils or escape sequences. -->
 # raw-contact
 - r"Send a message to pilot@example.invalid."
 
-<!--A raw block keeps every sigil as literal text and strips its final newline.-->
+<!-- A raw block keeps every sigil as literal text and strips its final newline. -->
 # raw-sigils
 - |raw-
   @person, $playerName, and &pickup-alert are literal text.
 
-<!--Split incompatible concepts into semantically coherent branches.-->
+<!-- Split incompatible concepts into semantically coherent branches. -->
 # incident
 - @repair-incident
 - @travel-incident
@@ -610,8 +615,7 @@ performance constraints, and implementation phases are in
 ## Project structure
 
 ```text
-README.md                    This v2 design overview
-test.meco.md                 Canonical v2 syntax corpus
+README.md                    V2 overview and canonical syntax corpus
 V2_SPECIFICATION.md          Detailed v2 specification and implementation plan
 v1/
   README.md                  Original runnable v1 documentation
