@@ -4,6 +4,7 @@ members = [
     "crates/mecojoni-cli",
     "crates/mecojoni-core",
     "crates/mecojoni-wasm",
+    "godot/mecojoni-ffi",
 ]
 resolver = "3"
 

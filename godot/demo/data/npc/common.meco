@@ -1,0 +1,9 @@
+---
+meco: 1.0
+module: common
+exports: [observation]
+---
+
+# observation
+- the market is unusually quiet
+- the weather has changed

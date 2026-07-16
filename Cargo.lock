@@ -112,6 +112,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "mecojoni-ffi"
+version = "0.0.0"
+dependencies = [
+ "mecojoni-core",
+]
+
+[[package]]
 name = "mecojoni-wasm"
 version = "0.0.0"
 dependencies = [

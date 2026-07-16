@@ -1,1 +1,9 @@
 /target/
+
+# Godot integration build outputs and fetched dependencies
+/godot/gdextension/godot-cpp/
+/godot/gdextension/build/
+/godot/demo/bin/*.dylib
+/godot/demo/bin/*.so
+/godot/demo/bin/*.dll
+/godot/demo/.godot/
