@@ -5,6 +5,12 @@ This roadmap turns the language in `README.md` and the runtime design in
 authoritative syntax source. A syntax change is incomplete until the README,
 specification, fixtures, and parser tests agree.
 
+The original source-language milestones below are complete. The active compiled
+artifact milestones B0–B6, including their exit gates, are defined in
+[`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md). B0 is complete: the
+repository records archived v1 JS, v2 native Rust, and v2 WASM/Deno evidence plus
+a manually authored multi-module package and a single-WASM deployment budget.
+
 ## Fixed implementation constraints
 
 - Rust is the primary implementation language and public API.

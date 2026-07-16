@@ -1,0 +1,29 @@
+{
+  "schema": "mecojoni-benchmark-result/1",
+  "recordedAt": "2026-07-16",
+  "host": { "os": "Darwin 25.3.0", "architecture": "arm64", "cpu": "Apple M1 Max" },
+  "toolchain": { "rust": "1.85.0", "deno": "2.8.3", "v8": "14.9.207.2-rusty" },
+  "notes": [
+    "All figures are five-sample medians from release builds.",
+    "v1 uses its random stateful session; v2 uses independent weighted/1 seeds. Timings and topology are comparable, outputs are not a cross-version semantic contract.",
+    "WASM samples instantiate a fresh module before each measured compile and report zero live ABI handles and allocations after disposal."
+  ],
+  "workloads": [
+    { "scenario": "flat-64", "class": "realistic", "generations": 1000, "v1Js": { "compileMs": 0.169875, "generationMs": 1.514667, "expansions": 1000, "outputBytes": 13827 }, "v2Rust": { "compileNs": 57708, "generationNs": 246834, "compileAllocatedBytes": 168796, "generationAllocatedBytes": 641835, "expansions": 1000, "samplerWords": 1000, "outputBytes": 13835 }, "v2Wasm": { "compileMs": 0.441958, "generationMs": 5.969875, "memoryBefore": 1114112, "memoryAfterCompile": 1245184, "expansions": 1000, "samplerWords": 1000, "outputBytes": 13835 } },
+    { "scenario": "tree-dialogue", "class": "realistic", "generations": 1000, "v1Js": { "compileMs": 0.18225, "generationMs": 1.29575, "expansions": 5000, "outputBytes": 53165 }, "v2Rust": { "compileNs": 22833, "generationNs": 800667, "compileAllocatedBytes": 49736, "generationAllocatedBytes": 1173656, "expansions": 5000, "samplerWords": 5000, "outputBytes": 53324 }, "v2Wasm": { "compileMs": 0.247834, "generationMs": 6.023083, "memoryBefore": 1114112, "memoryAfterCompile": 1179648, "expansions": 5000, "samplerWords": 5000, "outputBytes": 53324 } },
+    { "scenario": "chain-512", "class": "adversarial", "generations": 100, "v1Js": { "compileMs": 24.735708, "generationMs": 4.122167, "expansions": 51300, "outputBytes": 800 }, "v2Rust": { "compileNs": 2270834, "generationNs": 3135375, "compileAllocatedBytes": 2837280, "generationAllocatedBytes": 42559800, "expansions": 51300, "samplerWords": 51300, "outputBytes": 800 }, "v2Wasm": { "compileMs": 4.953916, "generationMs": 6.108625, "memoryBefore": 1114112, "memoryAfterCompile": 2621440, "expansions": 51300, "samplerWords": 51300, "outputBytes": 800 } },
+    { "scenario": "dense-dag-96x8", "class": "adversarial", "generations": 100, "v1Js": { "compileMs": 2.783125, "generationMs": 0.294834, "expansions": 2449, "outputBytes": 800 }, "v2Rust": { "compileNs": 1329917, "generationNs": 176250, "compileAllocatedBytes": 1913144, "generationAllocatedBytes": 1293100, "expansions": 2390, "samplerWords": 2390, "outputBytes": 800 }, "v2Wasm": { "compileMs": 3.4885, "generationMs": 0.809709, "memoryBefore": 1114112, "memoryAfterCompile": 2293760, "expansions": 2390, "samplerWords": 2390, "outputBytes": 800 } },
+    { "scenario": "recursive-balanced", "class": "realistic", "generations": 1000, "v1Js": { "compileMs": 0.035625, "generationMs": 0.389, "expansions": 1384, "outputBytes": 2508 }, "v2Rust": { "compileNs": 7333, "generationNs": 311792, "compileAllocatedBytes": 10582, "generationAllocatedBytes": 713608, "expansions": 1431, "samplerWords": 1431, "outputBytes": 2574 }, "v2Wasm": { "compileMs": 0.150125, "generationMs": 4.55975, "memoryBefore": 1114112, "memoryAfterCompile": 1179648, "expansions": 1431, "samplerWords": 1431, "outputBytes": 2574 } },
+    { "scenario": "fanout-10000", "class": "adversarial", "generations": 100, "v1Js": { "compileMs": 6.849083, "generationMs": 4.491583, "expansions": 100, "outputBytes": 1586 }, "v2Rust": { "compileNs": 243150458, "generationNs": 50416, "compileAllocatedBytes": 30430534, "generationAllocatedBytes": 64883, "expansions": 100, "samplerWords": 100, "outputBytes": 1583 }, "v2Wasm": { "compileMs": 802.814459, "generationMs": 1.55, "memoryBefore": 1114112, "memoryAfterCompile": 19857408, "expansions": 100, "samplerWords": 100, "outputBytes": 1583 } }
+  ],
+  "representativePackage": {
+    "name": "harbor-dialogue",
+    "sourceBytes": 1258,
+    "manifestBytes": 28,
+    "rules": 11,
+    "productions": 35,
+    "artifactHash": "a7bbf39cec63a6fb",
+    "v2Rust": { "compileNs": 66458, "compileAllocatedBytes": 122815, "firstGenerationNs": 1208, "firstGenerationAllocatedBytes": 1458 },
+    "v2Wasm": { "compileMs": 0.260333, "firstGenerationMs": 0.045417, "memoryBefore": 1114112, "memoryAfterCompile": 1245184 }
+  }
+}

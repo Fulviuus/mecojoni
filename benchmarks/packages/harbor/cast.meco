@@ -1,0 +1,13 @@
+---
+meco: 2
+module: cast
+exports: [name]
+---
+
+# name
+- Ada
+- Imani
+- Marek
+- Noor
+- Sora
+- Tomas

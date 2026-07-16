@@ -1,0 +1,40 @@
+---
+meco: 2
+module: scenes
+exports: [ambient, hazard, place]
+---
+
+# ambient
+- @weather settles over @place
+- @sound carries through @place
+- @activity continues near @place
+
+# weather
+- fog
+- salt rain
+- late sunlight
+- a cold wind
+
+# sound
+- a ferry horn
+- rigging bells
+- gulls
+- market chatter
+
+# activity
+- unloading
+- net mending
+- an auction
+- a patrol
+
+# hazard
+- the loose mooring
+- the incoming squall
+- a missing lantern
+- the crowded channel
+
+# place
+- by the old quay
+- beneath the signal tower
+- outside the chandlery
+- along the eastern breakwater

@@ -30,6 +30,19 @@ Run the equivalent release WASM harness in Deno:
 deno task wasm:bench
 ```
 
+Run the archived v1 JavaScript timing baseline in the same Deno/V8 host:
+
+```sh
+deno task v1:bench
+```
+
+The complete first cross-runtime result is checked in as
+[`benchmarks/results/2026-07-16-darwin-arm64.json`](benchmarks/results/2026-07-16-darwin-arm64.json).
+The file includes all six generated shapes plus the manually authored,
+multi-module Harbor package under [`benchmarks/packages/harbor`](benchmarks/packages/harbor).
+The filename `operations-v1.contract` below means version 1 of the operation
+contract; it is not a benchmark of the Mecojoni v1 language.
+
 It reports compile/generation time, linear-memory pages before/after compile and
 dispose, operation counts, live handles, and host-visible ABI allocations. The
 normative Deno test requires zero leaked handles/allocations and at most one page
@@ -78,3 +91,24 @@ between cached trace-off selection and the full traced path for a 1,024-way rule
 
 No other optimization was retained: the remaining workloads did not justify an
 alias table, bytecode, serialized IR, or a more complex history representation.
+
+## Bytecode deployment budget
+
+The first consumer needs a build-coupled, content-specific browser artifact: one
+content-bearing `.wasm`, no runtime `.meco` fetches, and no browser-side import
+resolution. Portable separately distributed `.mecob` files remain useful for
+tooling but are not the primary deployment requirement.
+
+The experimental format may freeze as `bytecode/1` only when the Harbor package
+meets all of these gates on the same host/toolchain:
+
+- bytecode load plus first output is at least 25% faster, or at least 1 ms faster,
+  than source compile plus first output;
+- the compressed content-bearing WASM is no more than 20% larger than the best
+  embedded-source alternative;
+- source, external-bytecode, and embedded-bytecode generation are exactly
+  equivalent, including replay identity and traces; and
+- repeated WASM load/generate/dispose cycles leak no handles or host allocations.
+
+Generated stress shapes are recorded separately and can motivate engineering,
+but cannot by themselves justify a permanent compatibility format.

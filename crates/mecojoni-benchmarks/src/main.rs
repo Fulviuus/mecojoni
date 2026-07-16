@@ -5,9 +5,12 @@ use std::{
 };
 
 use mecojoni_benchmarks::{
-    WORKLOAD_VERSION, Workload, operation_contract, workload_limits, workloads,
+    STARTUP_PROFILE_VERSION, WORKLOAD_VERSION, Workload, harbor_startup_package,
+    operation_contract, workload_limits, workloads,
 };
-use mecojoni_core::{GenerationRequest, compile_package};
+use mecojoni_core::{
+    DataBinding, GenerationRequest, Rational, Value, compile_package, compile_package_with_manifest,
+};
 
 struct CountingAllocator;
 
@@ -98,6 +101,10 @@ struct Measurement {
 }
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("--startup") {
+        measure_startup();
+        return;
+    }
     if std::env::args().nth(1).as_deref() == Some("--contract") {
         println!(
             "version|scenario|source_bytes|rules|productions|artifact_hash|expansions|sampler_words|text"
@@ -155,6 +162,84 @@ fn main() {
             first.output_bytes,
         );
     }
+}
+
+fn measure_startup() {
+    let samples = 5;
+    let mut measurements = Vec::new();
+    let package = harbor_startup_package().expect("committed Harbor package loads");
+    for _ in 0..samples {
+        let before_compile = AllocationSnapshot::now();
+        let compile_started = Instant::now();
+        let grammar = compile_package_with_manifest(&package.input, &package.manifest)
+            .expect("committed Harbor package compiles");
+        let compile_ns = compile_started.elapsed().as_nanos();
+        let after_compile = AllocationSnapshot::now();
+        let (compile_calls, compile_bytes, compile_live) = after_compile.since(before_compile);
+        let data = [
+            DataBinding::new("visitor".to_string(), Value::Text("Rin".to_string())),
+            DataBinding::new("mood".to_string(), Value::Enum("tense".to_string())),
+            DataBinding::new("urgency".to_string(), Value::Number(Rational::ONE)),
+        ];
+        let before_generation = AllocationSnapshot::now();
+        let generation_started = Instant::now();
+        let result = grammar
+            .generate_weighted(&GenerationRequest {
+                entry: Some("harbor.scene"),
+                seed: 0,
+                limits: workload_limits(),
+                data: &data,
+                trace_bindings: false,
+                trace_selections: false,
+                trace_provenance: false,
+            })
+            .expect("committed Harbor entry generates");
+        let generation_ns = generation_started.elapsed().as_nanos();
+        let after_generation = AllocationSnapshot::now();
+        let (generation_calls, generation_bytes, generation_live) =
+            after_generation.since(before_generation);
+        measurements.push(Measurement {
+            rules: grammar.rule_count(),
+            productions: grammar.production_count(),
+            compile_ns,
+            compile_calls,
+            compile_bytes,
+            compile_live,
+            generation_ns,
+            generation_calls,
+            generation_bytes,
+            generation_live,
+            expansions: u64::from(result.expansions()),
+            sampler_words: u64::from(result.sampler_words()),
+            output_bytes: result.text().len() as u64,
+        });
+    }
+    let first = measurements[0];
+    println!(
+        "version,package,samples,source_bytes,manifest_bytes,rules,productions,compile_ns_median,compile_alloc_calls_median,compile_alloc_bytes_median,compile_live_bytes_median,first_generation_ns_median,first_generation_alloc_calls_median,first_generation_alloc_bytes_median,first_generation_live_bytes_median,expansions,sampler_words,output_bytes,artifact_hash"
+    );
+    let grammar = compile_package_with_manifest(&package.input, &package.manifest)
+        .expect("committed Harbor package compiles");
+    println!(
+        "{STARTUP_PROFILE_VERSION},{},{samples},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{:016x}",
+        package.name,
+        package.source_bytes,
+        package.manifest_bytes,
+        first.rules,
+        first.productions,
+        median(&measurements, |sample| sample.compile_ns),
+        median(&measurements, |sample| sample.compile_calls),
+        median(&measurements, |sample| sample.compile_bytes),
+        median(&measurements, |sample| sample.compile_live),
+        median(&measurements, |sample| sample.generation_ns),
+        median(&measurements, |sample| sample.generation_calls),
+        median(&measurements, |sample| sample.generation_bytes),
+        median(&measurements, |sample| sample.generation_live),
+        first.expansions,
+        first.sampler_words,
+        first.output_bytes,
+        grammar.artifact_hash(),
+    );
 }
 
 fn measure(workload: &Workload) -> Measurement {

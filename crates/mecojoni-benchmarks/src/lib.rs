@@ -8,6 +8,10 @@ use mecojoni_core::{
     compile_package,
 };
 
+mod startup;
+
+pub use startup::{STARTUP_PROFILE_VERSION, StartupPackage, harbor_startup_package};
+
 pub const WORKLOAD_VERSION: &str = "workloads/1";
 
 /// Explicit adversarial-suite limits; production defaults remain unchanged.

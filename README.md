@@ -14,16 +14,21 @@ define rules and list items define alternatives—
 while adding the structure needed for game data, conditions, reuse, localization,
 and reliable long-running generation.
 
-> **Status:** the v2 roadmap implementation is feature-complete. The
+> **Status:** the v2 source-language roadmap is feature-complete. An experimental
+> compiled-artifact track is now in progress after representative native/WASM
+> measurements established a single-WASM deployment requirement. The
 > dependency-free core parses and compiles complete packages, executes exact typed
 > `weighted/1` generation, and resolves complete localized messages through a
 > synchronous host formatter in Rust, Deno, and Chrome. Transactional `diverse/1`, span-aware
 > provenance, repetition audits, replay receipts, and versioned session/history
 > snapshots now run across Rust and WASM. The dependency-free `std` authoring CLI,
-> explicit v1 migration, initial editor grammar, committed native/WASM workloads,
+> explicit v1 migration, initial editor grammar, committed v1/native/WASM workloads,
 > and frozen compatibility contracts are also executable. The crates remain
 > unpublished pending the owner's distribution version and license choice. The
 > original proof of concept and its documentation live in [`v1/`](v1/README.md).
+> The bytecode design and implementation status are tracked in
+> [`BYTECODE_FORMAT_PLAN.md`](BYTECODE_FORMAT_PLAN.md); recorded evidence lives in
+> [`BENCHMARKS.md`](BENCHMARKS.md).
 
 The syntax in this README is authoritative. `V2_SPECIFICATION.md` must be updated
 with every syntax change; if the documents temporarily disagree, this README wins.

@@ -1,6 +1,7 @@
 # Mecojoni bytecode format plan
 
-> **Status:** proposed, not implemented and not a compatibility promise.
+> **Status:** implementation in progress. Milestone B0 is complete; `bytecode/0`
+> remains experimental and is not a compatibility promise.
 >
 > This plan does not reverse
 > [ADR 0001](docs/decisions/0001-defer-compiled-artifacts.md). Source packages
@@ -550,6 +551,16 @@ materially after accounting for larger download/instantiation cost. No absolute
 latency promise is inferred from one machine.
 
 ## Implementation milestones
+
+| Milestone | Status |
+| --- | --- |
+| B0 — Reopen with evidence | Complete |
+| B1 — Lowered IR boundary | Pending |
+| B2 — Experimental `bytecode/0` | Pending |
+| B3 — Complete semantics | Pending |
+| B4 — CLI and external WASM | Pending |
+| B5 — Single-WASM build | Pending |
+| B6 — Freeze or stop | Pending |
 
 ### Milestone B0 — Reopen the decision with evidence
 

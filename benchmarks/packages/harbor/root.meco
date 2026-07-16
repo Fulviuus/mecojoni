@@ -1,0 +1,37 @@
+---
+meco: 2
+module: harbor
+entry: line
+sampler: diverse/1
+
+types:
+  Mood: [calm, tense]
+
+inputs:
+  visitor: text
+  mood: Mood
+  urgency: number
+
+imports:
+  cast: "./cast.meco"
+  scenes: "./scenes.meco"
+
+exports: [line, scene, welcome]
+---
+
+# line
+- [weight = urgency] {mood is tense}
+  {cast.name as lookout}
+  @warning <- lookout: $lookout, guest: $visitor
+- [3] @scene
+
+# welcome
+- &harbor-welcome <- visitor: $visitor
+
+# warning <- lookout: text, guest: text
+- $lookout warns $guest about @scenes.hazard.
+
+# scene
+- {cast.name as worker}
+  $visitor meets $worker @scenes.place.
+- @scenes.ambient
