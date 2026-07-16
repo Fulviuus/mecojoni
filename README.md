@@ -695,6 +695,10 @@ crates/
   mecojoni-core/             Safe, dependency-free no_std + alloc core
     tests/fixtures/          Filesystem-backed integration corpus
   mecojoni-wasm/             Handwritten WASM ABI and target allocator
+js/
+  mecojoni.ts                Browser-neutral TypeScript wrapper
+  mecojoni_test.ts           Normative Deno integration suite
+  browser_smoke.*            Same-artifact browser integration harness
 v1/
   README.md                  Original runnable v1 documentation
   src/                       V1 compiler, generator, audit, and CLI
@@ -709,13 +713,16 @@ spans, ordered multi-error diagnostics, complete source parsing including cooked
 block interpolation, immutable multi-module compilation, exact `weighted/1`
 generation, iterative graph analysis/expansion, deterministic work limits,
 versioned profile records, the composition audit, a version-discovery WASM ABI,
-and target-spanning tests. The current executable subset supports static weights,
+and target-spanning tests. The WASM ABI now includes allocation, package,
+compilation, generation, result-copy, diagnostic, opaque-handle, disposal, and
+lifecycle-counter operations; the dependency-free TypeScript wrapper is tested in
+Deno and Chrome against the same artifact. The current executable subset supports static weights,
 ordinary references, literal/quoted/raw/block text, empty output, public entries,
 and productive recursion. Types, request data, dynamic weights, guards, bindings,
 captures, and complete messages are parsed but deliberately return
 `E_UNSUPPORTED_FEATURE` from compilation until their milestones implement their
-runtime semantics. The complete buffer/handle ABI, JavaScript wrapper, CLI, and
-editor tooling also remain to be built. Use v1 for features outside this weighted
+runtime semantics. Stateful sessions/diversity, formatter integration, the CLI,
+and editor tooling remain to be built. Use v1 for features outside this weighted
 v2 subset.
 
 ## Name

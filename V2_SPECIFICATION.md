@@ -3,8 +3,8 @@
 > This document is the target design, not a claim that every feature already
 > exists. The portable workspace, complete recovering source parser, immutable
 > package compiler, iterative `weighted/1` generator, deterministic primitives,
-> package boundary, and initial audit are implemented; completion is tracked in
-> `ROADMAP.md`.
+> package boundary, handwritten WASM ABI, Deno/browser wrapper, and initial audit
+> are implemented; completion is tracked in `ROADMAP.md`.
 
 The syntax in `README.md` is authoritative. `V2_SYNTAX.md` is its formal lexical
 companion and `V2_INTERFACES.md` freezes host boundaries. Any syntax change must

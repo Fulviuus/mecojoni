@@ -122,15 +122,15 @@ native call stack recursively.
 
 Prove the deployment model before the language grows further.
 
-- [ ] Finalize ABI version discovery and allocator/deallocator exports.
-- [ ] Expose package construction, compilation, weighted generation, result
+- [x] Finalize ABI version discovery and allocator/deallocator exports.
+- [x] Expose package construction, compilation, weighted generation, result
   access, diagnostics, and handle disposal through opaque handles.
-- [ ] Prevent stale, double-freed, cross-kind, and out-of-range handle use.
-- [ ] Write the dependency-light JavaScript wrapper and TypeScript declarations.
-- [ ] Ensure JavaScript strings are encoded and decoded strictly at the boundary.
-- [ ] Add Deno integration tests using real `.meco` fixture files.
-- [ ] Add browser tests for the same compiled WASM artifact.
-- [ ] Verify repeated compile/generate/dispose cycles do not leak handles or linear
+- [x] Prevent stale, double-freed, cross-kind, and out-of-range handle use.
+- [x] Write the dependency-light JavaScript wrapper and TypeScript declarations.
+- [x] Ensure JavaScript strings are encoded and decoded strictly at the boundary.
+- [x] Add Deno integration tests using real `.meco` fixture files.
+- [x] Add browser tests for the same compiled WASM artifact.
+- [x] Verify repeated compile/generate/dispose cycles do not leak handles or linear
   memory beyond documented allocator behavior.
 
 **Exit gate:** the same fixture and seed produce the same result through Rust,

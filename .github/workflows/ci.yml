@@ -27,3 +27,15 @@ jobs:
         run: cargo +1.85.0 check -p mecojoni-core --target thumbv6m-none-eabi
       - name: WebAssembly artifact
         run: cargo +1.85.0 build -p mecojoni-wasm --target wasm32-unknown-unknown
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: TypeScript boundary
+        run: deno task js:check
+      - name: Deno WebAssembly integration
+        run: deno task wasm:test
+      - name: Browser WebAssembly integration
+        env:
+          MECO_BROWSER: /usr/bin/google-chrome
+        run: deno task wasm:browser:test

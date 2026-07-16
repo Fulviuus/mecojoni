@@ -96,12 +96,28 @@ One versioned dispatch surface prevents an export explosion:
 u32 meco_call(u32 operation, u32 input_pointer, u32 input_length)
 ```
 
-It always returns a nonzero result handle when the raw input range is valid,
-including for ordinary language/runtime errors. Operation IDs and request payloads
-use `meco-wire/1`: fixed little-endian integers and length-prefixed strict UTF-8
-byte strings, with unknown required fields rejected. Each operation documents its
-exact payload before implementation; no Rust layout, pointer, enum discriminant,
-JSON number, or JavaScript object layout crosses the ABI.
+It always returns a nonzero result handle when the raw input range is valid and a
+handle ID remains available, including for ordinary language/runtime errors. A
+zero return means the input range was outside a live `meco_alloc` allocation or
+the monotonic handle space was exhausted. Operation IDs and request payloads use
+`meco-wire/1`: fixed little-endian integers and length-prefixed strict UTF-8 byte
+strings. No Rust layout, pointer, enum discriminant, JSON number, or JavaScript
+object layout crosses the ABI.
+
+Every request begins with `u32 wire_version = 1`. `str` below is `u32 byte_length`
+followed by strict UTF-8 bytes; `opt_str` is a one-byte `0`, or `1` followed by a
+`str`. Counts and payloads are bounded before allocation, duplicate source IDs
+are rejected, and trailing bytes are errors.
+
+| Operation | ID | Request after version | Success value |
+| --- | ---: | --- | --- |
+| package create | 1 | `str root`, module count; each module has canonical ID, source ID/name/bytes, and resolved import pairs | package handle |
+| compile | 2 | package handle | grammar handle plus entries/default/warnings payload |
+| weighted generate | 3 | grammar handle, `u64` seed, optional entry, five `u32` limits | text/entry/work-counter payload |
+
+Generation limits are depth, expansions, output Unicode scalars, output UTF-8
+bytes, and sampler words in that order. A `u64` is always little-endian and the
+TypeScript API accepts it as `bigint`.
 
 Result access is read-only and bounded:
 
@@ -111,18 +127,32 @@ u32 meco_result_value_handle(u32 result)       // 0 when absent
 u32 meco_result_payload_length(u32 result)
 u32 meco_result_payload_copy(u32 result, u32 destination, u32 capacity)
 void meco_handle_dispose(u32 handle)
+u32 meco_live_handle_count()
 ```
 
 Payload copy returns the required length without writing when capacity is too
-small. A value handle has an internal kind (package builder, compiled grammar,
+small. Calling `meco_result_value_handle` claims the returned value handle and
+transfers its disposal responsibility to the caller. Disposing a success result
+before claiming its value also disposes that still-owned value, so ignored results
+cannot leak package or grammar handles. A value handle has an internal kind
+(package builder, compiled grammar,
 session, repetition store, result, snapshot, or replay bundle). Every operation
 checks kind and liveness.
 
 Handle `0` is invalid. Public handles are monotonically allocated `u32` values and
-are never reused during one instance lifetime; reaching the ID limit returns
-`E_ABI_HANDLE_EXHAUSTED`. Disposal removes the value. Stale, double-disposed,
-unknown, and cross-kind handles return structured `E_ABI_*` diagnostics. Dropping
-the WebAssembly instance releases all remaining handles and allocator state.
+are never reused during one instance lifetime. Disposal removes the value and is
+idempotent, so a repeated or unknown disposal cannot double-free. Using a stale,
+unknown, or cross-kind handle in an operation returns a structured `E_ABI_*`
+diagnostic; result accessors report invalid status `2` or zero. The live-handle
+counter supports lifecycle tests and host leak telemetry. Dropping the WebAssembly
+instance releases all remaining handles and allocator state.
+
+Response payloads begin with `wire_version` and a kind: error `0`, package `1`,
+compile `2`, or generation `3`. Diagnostics encode code, severity, optional source
+ID plus byte/scalar span as `u64`s, and message. Compile success encodes entries,
+an optional default, and warnings. Generation success encodes text, resolved
+entry, expansions, and sampler words. The wrapper claims any value handle and
+copies the payload before disposing its result handle.
 
 ### JavaScript and Deno errors
 
@@ -135,10 +165,11 @@ type MecoResult<T> =
 ```
 
 It uses fatal UTF-8 encode/decode behavior, deterministic `bigint` conversion for
-64-bit fields, and `try/finally` disposal. An optional `orThrow()` throws a wrapper
-`MecoError`; ordinary core failures never surface as an unclassified JS exception.
-The wrapper rejects unpaired UTF-16 surrogates before allocation. Deno is the
-normative JS integration host; browser tests load the identical `.wasm` artifact.
+64-bit fields, and `try/finally` disposal. Ordinary core failures remain result
+values rather than unclassified JS exceptions. The wrapper rejects unpaired
+UTF-16 surrogates before allocation. Deno is the normative JS integration host;
+automated Chrome and in-app browser smoke tests load the identical `.wasm`
+artifact through the same browser-neutral wrapper.
 
 ## CLI streams and statuses (`cli/1`)
 
