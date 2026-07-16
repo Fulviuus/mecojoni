@@ -85,29 +85,45 @@ pub struct ArtifactLimits {
 impl ArtifactLimits {
     pub const HARD_MAXIMUM_BYTES: u64 = 64 * 1024 * 1024;
     pub const HARD_MAXIMUM_DECODED_BYTES: u64 = 128 * 1024 * 1024;
+    pub const HARD_MAXIMUM_STRINGS: u32 = 1_000_000;
+    pub const HARD_MAXIMUM_RULES: u32 = 100_000;
+    pub const HARD_MAXIMUM_PRODUCTIONS: u32 = 1_000_000;
+    pub const HARD_MAXIMUM_INSTRUCTIONS: u32 = 4_000_000;
+    pub const HARD_MAXIMUM_STACK_DEPTH: u32 = 256;
+    pub const HARD_MAXIMUM_DIAGNOSTICS: u32 = 100_000;
 
     #[must_use]
     pub const fn standard() -> Self {
         Self {
             maximum_bytes: Self::HARD_MAXIMUM_BYTES,
             maximum_decoded_bytes: Self::HARD_MAXIMUM_DECODED_BYTES,
-            maximum_strings: 1_000_000,
-            maximum_rules: 100_000,
-            maximum_productions: 1_000_000,
-            maximum_instructions: 4_000_000,
-            maximum_stack_depth: 256,
-            maximum_diagnostics: 100_000,
+            maximum_strings: Self::HARD_MAXIMUM_STRINGS,
+            maximum_rules: Self::HARD_MAXIMUM_RULES,
+            maximum_productions: Self::HARD_MAXIMUM_PRODUCTIONS,
+            maximum_instructions: Self::HARD_MAXIMUM_INSTRUCTIONS,
+            maximum_stack_depth: Self::HARD_MAXIMUM_STACK_DEPTH,
+            maximum_diagnostics: Self::HARD_MAXIMUM_DIAGNOSTICS,
         }
     }
 
+    /// Callers may lower any ceiling but never raise it past the hard default
+    /// (`BYTECODE_FORMAT.md`'s "Limits and rejection"); otherwise a permissive
+    /// caller-supplied `ArtifactLimits` would remove the bound entirely and
+    /// reopen the allocation-amplification risk these ceilings exist to close.
     fn validate(self, supplied: usize) -> MecoResult<Self> {
         if self.maximum_bytes > Self::HARD_MAXIMUM_BYTES
             || self.maximum_decoded_bytes > Self::HARD_MAXIMUM_DECODED_BYTES
+            || self.maximum_strings > Self::HARD_MAXIMUM_STRINGS
+            || self.maximum_rules > Self::HARD_MAXIMUM_RULES
+            || self.maximum_productions > Self::HARD_MAXIMUM_PRODUCTIONS
+            || self.maximum_instructions > Self::HARD_MAXIMUM_INSTRUCTIONS
+            || self.maximum_stack_depth > Self::HARD_MAXIMUM_STACK_DEPTH
+            || self.maximum_diagnostics > Self::HARD_MAXIMUM_DIAGNOSTICS
             || u64::try_from(supplied).unwrap_or(u64::MAX) > self.maximum_bytes
         {
             return Err(error(
                 DiagnosticCode::BYTECODE_LIMIT,
-                "artifact exceeds its configured byte budget",
+                "artifact limits exceed the format's hard ceilings",
             ));
         }
         Ok(self)
@@ -709,7 +725,7 @@ fn encode_span(writer: &mut Writer, span: Span) {
 
 fn decode_grammar(decoder: &mut Decoder<'_>, semantic_hash: u64) -> MecoResult<CompiledGrammar> {
     let input_count = decoder.count(decoder.limits.maximum_strings)?;
-    let mut inputs = Vec::with_capacity(input_count);
+    let mut inputs = Vec::new();
     for _ in 0..input_count {
         inputs.push(CompiledInput {
             external_name: decoder.string()?,
@@ -717,7 +733,7 @@ fn decode_grammar(decoder: &mut Decoder<'_>, semantic_hash: u64) -> MecoResult<C
         });
     }
     let rule_count = decoder.count(decoder.limits.maximum_rules)?;
-    let mut rules = Vec::with_capacity(rule_count);
+    let mut rules = Vec::new();
     let mut productions = 0_u32;
     for _ in 0..rule_count {
         let rule = decode_rule(decoder)?;
@@ -730,14 +746,14 @@ fn decode_grammar(decoder: &mut Decoder<'_>, semantic_hash: u64) -> MecoResult<C
         rules.push(rule);
     }
     let entry_count = decoder.count(decoder.limits.maximum_rules)?;
-    let mut entries = Vec::with_capacity(entry_count);
+    let mut entries = Vec::new();
     for _ in 0..entry_count {
         entries.push((decoder.string()?, decoder.index()?));
     }
     let default = decoder.u32()?;
     let default_entry = (default != u32::MAX).then_some(default as usize);
     let warning_count = decoder.count(decoder.limits.maximum_diagnostics)?;
-    let mut warnings = Vec::with_capacity(warning_count);
+    let mut warnings = Vec::new();
     for _ in 0..warning_count {
         let name = decoder.string()?;
         let code = DiagnosticCode::artifact_warning(&name).ok_or_else(|| {
@@ -762,11 +778,11 @@ fn decode_grammar(decoder: &mut Decoder<'_>, semantic_hash: u64) -> MecoResult<C
         ));
     }
     let message_count = decoder.count(decoder.limits.maximum_strings)?;
-    let mut messages = Vec::with_capacity(message_count);
+    let mut messages = Vec::new();
     for _ in 0..message_count {
         let id = decoder.string()?;
         let argument_count = decoder.count(decoder.limits.maximum_strings)?;
-        let mut arguments = Vec::with_capacity(argument_count);
+        let mut arguments = Vec::new();
         for _ in 0..argument_count {
             arguments.push(MessageArgument {
                 name: decoder.string()?,
@@ -789,7 +805,7 @@ fn decode_grammar(decoder: &mut Decoder<'_>, semantic_hash: u64) -> MecoResult<C
 fn decode_rule(decoder: &mut Decoder<'_>) -> MecoResult<CompiledRule> {
     let name = decoder.string()?;
     let parameter_count = decoder.count(decoder.limits.maximum_strings)?;
-    let mut parameters = Vec::with_capacity(parameter_count);
+    let mut parameters = Vec::new();
     for _ in 0..parameter_count {
         parameters.push((decoder.string()?, decode_type(decoder)?));
     }
@@ -801,7 +817,7 @@ fn decode_rule(decoder: &mut Decoder<'_>) -> MecoResult<CompiledRule> {
     let message_effect = decoder.bool()?;
     let static_selection = if decoder.bool()? {
         let count = decoder.count(decoder.limits.maximum_productions)?;
-        let mut cumulative = Vec::with_capacity(count);
+        let mut cumulative = Vec::new();
         for _ in 0..count {
             cumulative.push(decoder.u64()?);
         }
@@ -813,7 +829,7 @@ fn decode_rule(decoder: &mut Decoder<'_>) -> MecoResult<CompiledRule> {
         None
     };
     let production_count = decoder.count(decoder.limits.maximum_productions)?;
-    let mut productions = Vec::with_capacity(production_count);
+    let mut productions = Vec::new();
     for _ in 0..production_count {
         productions.push(decode_production(decoder)?);
     }
@@ -844,7 +860,7 @@ fn decode_production(decoder: &mut Decoder<'_>) -> MecoResult<CompiledProduction
         None
     };
     let binding_count = decoder.count(decoder.limits.maximum_instructions)?;
-    let mut bindings = Vec::with_capacity(binding_count);
+    let mut bindings = Vec::new();
     for _ in 0..binding_count {
         decoder.instruction()?;
         bindings.push(CompiledBinding {
@@ -856,7 +872,7 @@ fn decode_production(decoder: &mut Decoder<'_>) -> MecoResult<CompiledProduction
         });
     }
     let part_count = decoder.count(decoder.limits.maximum_instructions)?;
-    let mut parts = Vec::with_capacity(part_count);
+    let mut parts = Vec::new();
     for _ in 0..part_count {
         decoder.instruction()?;
         parts.push(decode_part(decoder)?);
@@ -897,7 +913,7 @@ fn decode_part(decoder: &mut Decoder<'_>) -> MecoResult<CompiledPart> {
         4 => {
             let id = decoder.string()?;
             let count = decoder.count(decoder.limits.maximum_instructions)?;
-            let mut arguments = Vec::with_capacity(count);
+            let mut arguments = Vec::new();
             for _ in 0..count {
                 arguments.push((decoder.string()?, decode_value_operand(decoder)?));
             }
@@ -913,7 +929,7 @@ fn decode_part(decoder: &mut Decoder<'_>) -> MecoResult<CompiledPart> {
 
 fn decode_values(decoder: &mut Decoder<'_>) -> MecoResult<Vec<CompiledValue>> {
     let count = decoder.count(decoder.limits.maximum_instructions)?;
-    let mut values = Vec::with_capacity(count);
+    let mut values = Vec::new();
     for _ in 0..count {
         values.push(decode_value_operand(decoder)?);
     }
@@ -1029,7 +1045,7 @@ fn decode_type(decoder: &mut Decoder<'_>) -> MecoResult<ValueType> {
         3 => {
             let name = decoder.string()?;
             let count = decoder.count(decoder.limits.maximum_strings)?;
-            let mut variants = Vec::with_capacity(count);
+            let mut variants = Vec::new();
             for _ in 0..count {
                 variants.push(decoder.string()?);
             }
@@ -1353,6 +1369,23 @@ mod tests {
         };
         assert_eq!(
             decode_artifact(&bytes, limits).unwrap_err().diagnostics()[0].code(),
+            DiagnosticCode::BYTECODE_LIMIT
+        );
+    }
+
+    #[test]
+    fn caller_supplied_limits_cannot_raise_hard_ceilings() {
+        // BYTECODE_FORMAT.md: "Callers may lower but not raise hard ceilings."
+        // A permissive caller config must not be able to remove the bound
+        // that keeps a claimed element count from forcing an oversized
+        // transient allocation before the bytes backing it are validated.
+        let bytes = encode_artifact(&grammar(), ArtifactOptions::default()).expect("encode");
+        let raised = ArtifactLimits {
+            maximum_instructions: ArtifactLimits::HARD_MAXIMUM_INSTRUCTIONS + 1,
+            ..ArtifactLimits::default()
+        };
+        assert_eq!(
+            decode_artifact(&bytes, raised).unwrap_err().diagnostics()[0].code(),
             DiagnosticCode::BYTECODE_LIMIT
         );
     }

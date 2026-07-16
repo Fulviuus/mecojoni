@@ -49,8 +49,31 @@ Deno.test("resolvePath resolves relative paths against the repository root", () 
   assert(Deno.statSync(resolved).isFile);
 });
 
-Deno.test("resolvePath passes absolute paths through unchanged", () => {
-  assertEquals(resolvePath("/tmp/whatever.meco"), "/tmp/whatever.meco");
+Deno.test("resolvePath passes through an absolute path already inside the root", () => {
+  const inRoot = resolvePath("examples/hello.meco");
+  assertEquals(resolvePath(inRoot), inRoot);
+});
+
+Deno.test("resolvePath rejects an absolute path outside the project root", () => {
+  let threw = false;
+  try {
+    resolvePath("/etc/passwd");
+  } catch (error) {
+    threw = true;
+    assertMatch((error as Error).message, /resolves outside the project root/);
+  }
+  assert(threw, "expected an absolute path outside the root to be rejected");
+});
+
+Deno.test("resolvePath rejects a relative path that escapes the project root", () => {
+  let threw = false;
+  try {
+    resolvePath("../../../../../etc/passwd");
+  } catch (error) {
+    threw = true;
+    assertMatch((error as Error).message, /resolves outside the project root/);
+  }
+  assert(threw, "expected a '..'-escaping relative path to be rejected");
 });
 
 Deno.test("parseJsonl parses one object per non-empty line", () => {

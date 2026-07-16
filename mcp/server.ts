@@ -60,14 +60,30 @@ export function resolveMecoBinary(): string {
 /**
  * Resolves a source/artifact path an agent supplies against `MECO_PROJECT_ROOT`
  * (or this repository's root, by default) so the server behaves consistently
- * no matter what working directory the MCP client launched it from. Absolute
- * paths pass through unchanged.
+ * no matter what working directory the MCP client launched it from.
+ *
+ * The resolved path must stay within that root. This is a single-project
+ * tool: an MCP client's arguments may themselves relay untrusted content (a
+ * prompt-injected agent, for instance), so neither a `..`-relative escape nor
+ * an absolute path pointing elsewhere on the host is allowed to reach the
+ * `meco` binary's file arguments. (This check is purely lexical — it does not
+ * resolve symlinks, so a symlink already inside the root that points outside
+ * it is not caught here.)
  */
 export function resolvePath(path: string): string {
-  if (path.startsWith("/")) return path;
-  const root = Deno.env.get("MECO_PROJECT_ROOT");
-  const base = root ? `file://${root.replace(/\/?$/, "/")}` : repoRoot;
-  return new URL(path, base).pathname;
+  const configuredRoot = Deno.env.get("MECO_PROJECT_ROOT");
+  const root = configuredRoot ? new URL(`file://${configuredRoot.replace(/\/?$/, "/")}`) : repoRoot;
+  const rootPath = root.pathname.replace(/\/?$/, "/");
+  const resolved = new URL(path, root);
+  const withinRoot = resolved.pathname === rootPath.slice(0, -1) ||
+    resolved.pathname.startsWith(rootPath);
+  if (!withinRoot) {
+    throw new Error(
+      `"${path}" resolves outside the project root (${rootPath}); ` +
+        "set MECO_PROJECT_ROOT if you intended a different root, or pass a path inside it",
+    );
+  }
+  return resolved.pathname;
 }
 
 export interface MecoRun {

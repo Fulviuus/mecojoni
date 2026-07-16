@@ -1,4 +1,7 @@
-use alloc::string::{String, ToString};
+use alloc::{
+    string::{String, ToString},
+    vec::Vec,
+};
 use core::{fmt, str};
 
 use crate::{SourceId, SourcePosition};
@@ -9,15 +12,25 @@ pub struct SourceFile {
     id: SourceId,
     name: String,
     text: String,
+    /// Byte offset of each Unicode scalar value in `text`, ascending and
+    /// derived entirely from `text`. Precomputed once so `position()` can
+    /// binary-search the scalar count up to a byte offset in O(log n)
+    /// instead of rescanning `text` with `.chars().count()` on every call —
+    /// the parser calls `position()` once per span, so an O(n) rescan there
+    /// would make parsing one module cost O(source length²) overall.
+    char_boundaries: Vec<usize>,
 }
 
 impl SourceFile {
     #[must_use]
     pub fn new(id: SourceId, name: impl Into<String>, text: impl Into<String>) -> Self {
+        let text = text.into();
+        let char_boundaries = text.char_indices().map(|(offset, _)| offset).collect();
         Self {
             id,
             name: name.into(),
-            text: text.into(),
+            text,
+            char_boundaries,
         }
     }
 
@@ -75,7 +88,9 @@ impl SourceFile {
             return None;
         }
 
-        let scalar = self.text.get(..byte)?.chars().count();
+        let scalar = self
+            .char_boundaries
+            .partition_point(|&offset| offset < byte);
         Some(SourcePosition::new(byte as u64, scalar as u64))
     }
 }

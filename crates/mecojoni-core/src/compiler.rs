@@ -832,6 +832,11 @@ impl CompiledGrammar {
         let inputs = self.validate_request_data(request.data)?;
         let mut random = SplitMix64::new(request.seed);
         let mut buffers = vec![String::new()];
+        // Running Unicode-scalar length per sink, updated incrementally by
+        // append_output. Kept alongside `buffers` instead of recomputed via
+        // `.chars().count()` at each emission, which would rescan the whole
+        // sink on every literal/value and make generation cost O(output²).
+        let mut sink_scalars = vec![0_u64];
         let mut frames = Vec::<RuntimeFrame>::new();
         let mut binding_trace = Vec::new();
         let mut selection_trace = Vec::new();
@@ -874,11 +879,12 @@ impl CompiledGrammar {
                     });
                     match compiled_part {
                         CompiledPart::Literal { text, span } => {
-                            let start = output_cursor(&buffers[sink]);
+                            let start = (buffers[sink].len(), sink_scalars[sink]);
                             append_output(
                                 &mut buffers[sink],
                                 text,
                                 &mut output_scalars,
+                                &mut sink_scalars[sink],
                                 request.limits,
                             )?;
                             record_emission(
@@ -891,7 +897,7 @@ impl CompiledGrammar {
                                 *span,
                                 sink,
                                 start,
-                                &buffers[sink],
+                                (buffers[sink].len(), sink_scalars[sink]),
                                 depth,
                                 None,
                             );
@@ -912,11 +918,12 @@ impl CompiledGrammar {
                                     "only text values can be emitted directly",
                                 ));
                             };
-                            let start = output_cursor(&buffers[sink]);
+                            let start = (buffers[sink].len(), sink_scalars[sink]);
                             append_output(
                                 &mut buffers[sink],
                                 &text,
                                 &mut output_scalars,
+                                &mut sink_scalars[sink],
                                 request.limits,
                             )?;
                             record_emission(
@@ -929,7 +936,7 @@ impl CompiledGrammar {
                                 *span,
                                 sink,
                                 start,
-                                &buffers[sink],
+                                (buffers[sink].len(), sink_scalars[sink]),
                                 depth,
                                 None,
                             );
@@ -957,7 +964,7 @@ impl CompiledGrammar {
                             span,
                         } => {
                             let start = buffers[sink].len();
-                            let start_scalar = scalar_len(&buffers[sink]);
+                            let start_scalar = sink_scalars[sink];
                             let capture_trace = push_provenance(
                                 &mut provenance,
                                 request.trace_provenance,
@@ -1062,6 +1069,7 @@ impl CompiledGrammar {
                     };
                     let temporary_sink = buffers.len();
                     buffers.push(String::new());
+                    sink_scalars.push(0);
                     let binding_trace_node = push_provenance(
                         &mut provenance,
                         request.trace_provenance,
@@ -1113,6 +1121,7 @@ impl CompiledGrammar {
                     trace_node,
                 } => {
                     let text = core::mem::take(&mut buffers[sink]);
+                    sink_scalars[sink] = 0;
                     let value = Value::Text(text);
                     bind_runtime_value(
                         &mut frames[frame],
@@ -1158,7 +1167,8 @@ impl CompiledGrammar {
                         sink,
                         start,
                         start_scalar,
-                        &buffers[sink],
+                        buffers[sink].len(),
+                        sink_scalars[sink],
                     );
                 }
                 Work::FinishProduction {
@@ -1172,7 +1182,8 @@ impl CompiledGrammar {
                     sink,
                     start,
                     start_scalar,
-                    &buffers[sink],
+                    buffers[sink].len(),
+                    sink_scalars[sink],
                 ),
                 Work::Expand {
                     rule,
@@ -1296,7 +1307,7 @@ impl CompiledGrammar {
                         ));
                     }
                     let start = buffers[sink].len();
-                    let start_scalar = scalar_len(&buffers[sink]);
+                    let start_scalar = sink_scalars[sink];
                     let production_trace = push_provenance(
                         &mut provenance,
                         request.trace_provenance,
@@ -3693,10 +3704,6 @@ fn validate_runtime_type(value: &Value, expected: &ValueType) -> Result<(), Stri
     }
 }
 
-fn output_cursor(output: &str) -> (usize, u64) {
-    (output.len(), scalar_len(output))
-}
-
 fn scalar_len(output: &str) -> u64 {
     u64::try_from(output.chars().count()).unwrap_or(u64::MAX)
 }
@@ -3742,7 +3749,7 @@ fn record_emission(
     source_span: Span,
     sink: usize,
     start: (usize, u64),
-    output: &str,
+    end: (usize, u64),
     depth: u32,
     name: Option<String>,
 ) {
@@ -3757,16 +3764,22 @@ fn record_emission(
         depth,
         name,
     );
-    finish_provenance(nodes, node, sink, start.0, start.1, output);
+    finish_provenance(nodes, node, sink, start.0, start.1, end.0, end.1);
 }
 
+/// `end`/`end_scalar` are the sink's already-tracked running byte/scalar
+/// length after the emission, passed in rather than recomputed here: scanning
+/// `output.chars().count()` per call would make every emission cost grow with
+/// the sink's total length so far, turning one generation into O(output²).
+#[allow(clippy::too_many_arguments)]
 fn finish_provenance(
     nodes: &mut [ProvenanceNode],
     node: Option<u32>,
     sink: usize,
     start: usize,
     start_scalar: u64,
-    output: &str,
+    end: usize,
+    end_scalar: u64,
 ) {
     let Some(node) = node.and_then(|value| usize::try_from(value).ok()) else {
         return;
@@ -3774,9 +3787,9 @@ fn finish_provenance(
     let range = (sink == 0).then(|| {
         OutputRange::new(
             u64::try_from(start).unwrap_or(u64::MAX),
-            u64::try_from(output.len()).unwrap_or(u64::MAX),
+            u64::try_from(end).unwrap_or(u64::MAX),
             start_scalar,
-            scalar_len(output),
+            end_scalar,
         )
     });
     if let Some(node) = nodes.get_mut(node) {
@@ -3804,6 +3817,7 @@ fn append_output(
     output: &mut String,
     text: &str,
     output_scalars: &mut u32,
+    sink_scalars: &mut u64,
     limits: GenerationLimits,
 ) -> MecoResult<()> {
     let added = u32::try_from(text.chars().count()).map_err(|_| {
@@ -3818,6 +3832,7 @@ fn append_output(
             "generated output exceeds the scalar counter",
         )
     })?;
+    *sink_scalars = sink_scalars.saturating_add(u64::from(added));
     if *output_scalars > limits.max_output_scalars {
         return Err(runtime_error(
             DiagnosticCode::LIMIT_OUTPUT,

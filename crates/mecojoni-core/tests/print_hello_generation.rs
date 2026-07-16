@@ -6,8 +6,8 @@
 use std::{fs, path::PathBuf};
 
 use mecojoni_core::{
-    compile_package, parse_module, DataBinding, GenerationRequest, PackageInput, PackageSource,
-    SourceFile, SourceId, Value,
+    DataBinding, GenerationRequest, PackageInput, PackageSource, SourceFile, SourceId, Value,
+    compile_package, parse_module,
 };
 
 fn readme_corpus() -> String {

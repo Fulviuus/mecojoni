@@ -231,6 +231,44 @@ impl State {
         }
     }
 
+    /// Looks up `handle` and requires it to hold a package, folding the
+    /// "missing" and "wrong kind" cases into one typed error so callers don't
+    /// each repeat the three-way `wrong_kind`/`stale_handle` match by hand.
+    fn package(&self, handle: u32) -> Result<&PackageInput, AbiDiagnostic> {
+        match self.get(handle) {
+            Some(HandleValue::Package(package)) => Ok(package.as_ref()),
+            Some(value) => Err(wrong_kind(handle, HandleKind::Package, value.kind())),
+            None => Err(stale_handle(handle)),
+        }
+    }
+
+    /// Same contract as [`State::package`], for a grammar handle.
+    fn grammar(&self, handle: u32) -> Result<&CompiledGrammar, AbiDiagnostic> {
+        match self.get(handle) {
+            Some(HandleValue::Grammar(grammar)) => Ok(grammar.as_ref()),
+            Some(value) => Err(wrong_kind(handle, HandleKind::Grammar, value.kind())),
+            None => Err(stale_handle(handle)),
+        }
+    }
+
+    /// Same contract as [`State::package`], for a sampler session handle.
+    fn session(&self, handle: u32) -> Result<&RefCell<SamplerSession>, AbiDiagnostic> {
+        match self.get(handle) {
+            Some(HandleValue::Session(session)) => Ok(session),
+            Some(value) => Err(wrong_kind(handle, HandleKind::Session, value.kind())),
+            None => Err(stale_handle(handle)),
+        }
+    }
+
+    /// Same contract as [`State::package`], for a repetition store handle.
+    fn repetition(&self, handle: u32) -> Result<&RefCell<RepetitionStore>, AbiDiagnostic> {
+        match self.get(handle) {
+            Some(HandleValue::Repetition(store)) => Ok(store),
+            Some(value) => Err(wrong_kind(handle, HandleKind::Repetition, value.kind())),
+            None => Err(stale_handle(handle)),
+        }
+    }
+
     #[cfg(target_arch = "wasm32")]
     fn allocation_contains(&self, pointer: u32, length: u32) -> bool {
         let Some(end) = pointer.checked_add(length) else {
@@ -338,19 +376,13 @@ fn compile(state: &mut State, input: &[u8]) -> u32 {
         Ok(handle) => handle,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let grammar = match state.get(package_handle) {
-        Some(HandleValue::Package(package)) => match compile_package(package) {
-            Ok(grammar) => grammar,
-            Err(error) => return add_core_error(state, &error),
-        },
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                package_handle,
-                HandleKind::Package,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(package_handle)),
+    let package = match state.package(package_handle) {
+        Ok(package) => package,
+        Err(diagnostic) => return state.add_error(diagnostic),
+    };
+    let grammar = match compile_package(package) {
+        Ok(grammar) => grammar,
+        Err(error) => return add_core_error(state, &error),
     };
     let payload = encode_compile_success(&grammar);
     state.add_value_result(HandleValue::Grammar(Box::new(grammar)), payload)
@@ -361,21 +393,13 @@ fn compile_with_manifest(state: &mut State, input: &[u8]) -> u32 {
         Ok(request) => request,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let grammar = match state.get(package_handle) {
-        Some(HandleValue::Package(package)) => {
-            match compile_package_with_manifest(package, &manifest) {
-                Ok(grammar) => grammar,
-                Err(error) => return add_core_error(state, &error),
-            }
-        }
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                package_handle,
-                HandleKind::Package,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(package_handle)),
+    let package = match state.package(package_handle) {
+        Ok(package) => package,
+        Err(diagnostic) => return state.add_error(diagnostic),
+    };
+    let grammar = match compile_package_with_manifest(package, &manifest) {
+        Ok(grammar) => grammar,
+        Err(error) => return add_core_error(state, &error),
     };
     let payload = encode_compile_success(&grammar);
     state.add_value_result(HandleValue::Grammar(Box::new(grammar)), payload)
@@ -386,28 +410,20 @@ fn generate_weighted(state: &mut State, input: &[u8], typed: bool) -> u32 {
         Ok(request) => request,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let result = match state.get(request.grammar) {
-        Some(HandleValue::Grammar(grammar)) => {
-            let entry = request.entry.as_deref();
-            grammar.generate_weighted(&GenerationRequest {
-                entry,
-                seed: request.seed,
-                limits: request.limits,
-                data: &request.data,
-                trace_bindings: request.trace_bindings,
-                trace_selections: request.trace_selections,
-                trace_provenance: request.trace_provenance,
-            })
-        }
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                request.grammar,
-                HandleKind::Grammar,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(request.grammar)),
+    let grammar = match state.grammar(request.grammar) {
+        Ok(grammar) => grammar,
+        Err(diagnostic) => return state.add_error(diagnostic),
     };
+    let entry = request.entry.as_deref();
+    let result = grammar.generate_weighted(&GenerationRequest {
+        entry,
+        seed: request.seed,
+        limits: request.limits,
+        data: &request.data,
+        trace_bindings: request.trace_bindings,
+        trace_selections: request.trace_selections,
+        trace_provenance: request.trace_provenance,
+    });
     match result {
         Ok(result) => state.add_result(ResultRecord {
             status: STATUS_SUCCESS,
@@ -424,38 +440,40 @@ fn generate_structural(state: &mut State, input: &[u8]) -> u32 {
         Ok(request) => request,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let result = match state.get(request.grammar) {
-        Some(HandleValue::Grammar(grammar)) => grammar.generate_weighted_structural(
-            &GenerationRequest {
-                entry: request.entry.as_deref(),
-                seed: request.seed,
-                limits: request.limits,
-                data: &request.data,
-                trace_bindings: request.trace_bindings,
-                trace_selections: request.trace_selections,
-                trace_provenance: request.trace_provenance,
-            },
-            Some(LocaleRequest {
-                requested: request
-                    .requested_locale
-                    .as_deref()
-                    .expect("localized request decoder sets a locale"),
-                fallbacks: &request
-                    .fallback_locales
-                    .iter()
-                    .map(String::as_str)
-                    .collect::<Vec<_>>(),
-            }),
-        ),
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                request.grammar,
-                HandleKind::Grammar,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(request.grammar)),
+    // `decode_generation_request` only fills `requested_locale` when called
+    // with `localized: true`, which is the case just above; this is checked
+    // rather than `.expect()`-ed so a future call-site change that drops that
+    // argument returns a normal ABI error instead of panicking (and aborting
+    // the whole instance, since wasm32 release builds set `panic = "abort"`).
+    let Some(requested_locale) = request.requested_locale.as_deref() else {
+        return state.add_error(AbiDiagnostic::new(
+            "E_ABI_WIRE_VALUE",
+            "structural generation requires a decoded locale",
+        ));
     };
+    let grammar = match state.grammar(request.grammar) {
+        Ok(grammar) => grammar,
+        Err(diagnostic) => return state.add_error(diagnostic),
+    };
+    let result = grammar.generate_weighted_structural(
+        &GenerationRequest {
+            entry: request.entry.as_deref(),
+            seed: request.seed,
+            limits: request.limits,
+            data: &request.data,
+            trace_bindings: request.trace_bindings,
+            trace_selections: request.trace_selections,
+            trace_provenance: request.trace_provenance,
+        },
+        Some(LocaleRequest {
+            requested: requested_locale,
+            fallbacks: &request
+                .fallback_locales
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>(),
+        }),
+    );
     match result {
         Ok(result) => state.add_result(ResultRecord {
             status: STATUS_SUCCESS,
@@ -504,19 +522,19 @@ fn session_snapshot_export(state: &mut State, input: &[u8]) -> u32 {
         Ok(handle) => handle,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let result = match state.get(handle) {
-        Some(HandleValue::Session(session)) => session
-            .try_borrow()
-            .map(|session| session.snapshot().to_bytes())
-            .map_err(|_| {
-                AbiDiagnostic::new(
-                    "E_STATE_BUSY",
-                    "sampler session already has an active operation",
-                )
-            }),
-        Some(value) => Err(wrong_kind(handle, HandleKind::Session, value.kind())),
-        None => Err(stale_handle(handle)),
+    let session = match state.session(handle) {
+        Ok(session) => session,
+        Err(diagnostic) => return state.add_error(diagnostic),
     };
+    let result = session
+        .try_borrow()
+        .map(|session| session.snapshot().to_bytes())
+        .map_err(|_| {
+            AbiDiagnostic::new(
+                "E_STATE_BUSY",
+                "sampler session already has an active operation",
+            )
+        });
     let bytes = match result {
         Ok(bytes) => bytes,
         Err(error) => return state.add_error(error),
@@ -553,20 +571,18 @@ fn repetition_snapshot_export(state: &mut State, input: &[u8]) -> u32 {
         Ok(handle) => handle,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let result = match state.get(handle) {
-        Some(HandleValue::Repetition(store)) => match store.try_borrow() {
-            Ok(store) => store.snapshot().map(|snapshot| snapshot.to_bytes()),
-            Err(_) => Err(MecoError::new(Diagnostic::new(
-                mecojoni_core::DiagnosticCode::STATE_BUSY,
-                Severity::Error,
-                None,
-                "repetition store already has an active operation",
-            ))),
-        },
-        Some(value) => {
-            return state.add_error(wrong_kind(handle, HandleKind::Repetition, value.kind()));
-        }
-        None => return state.add_error(stale_handle(handle)),
+    let store = match state.repetition(handle) {
+        Ok(store) => store,
+        Err(diagnostic) => return state.add_error(diagnostic),
+    };
+    let result = match store.try_borrow() {
+        Ok(store) => store.snapshot().map(|snapshot| snapshot.to_bytes()),
+        Err(_) => Err(MecoError::new(Diagnostic::new(
+            mecojoni_core::DiagnosticCode::STATE_BUSY,
+            Severity::Error,
+            None,
+            "repetition store already has an active operation",
+        ))),
     };
     match result {
         Ok(bytes) => state.add_result(ResultRecord {
@@ -610,40 +626,28 @@ fn generate_diverse(state: &mut State, input: &[u8]) -> u32 {
         Ok(request) => request,
         Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let grammar = match state.get(request.grammar) {
-        Some(HandleValue::Grammar(grammar)) => grammar,
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                request.grammar,
-                HandleKind::Grammar,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(request.grammar)),
+    let grammar = match state.grammar(request.grammar) {
+        Ok(grammar) => grammar,
+        Err(diagnostic) => return state.add_error(diagnostic),
     };
-    let session_handle = request.session.expect("stateful decoder sets session");
-    let store_handle = request.repetition.expect("stateful decoder sets store");
-    let session = match state.get(session_handle) {
-        Some(HandleValue::Session(session)) => session,
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                session_handle,
-                HandleKind::Session,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(session_handle)),
+    // Same reasoning as generate_structural's locale check: `session`/
+    // `repetition` are only populated when `decode_generation_request` is
+    // called with `stateful: true` (just above), so this is a checked error
+    // rather than an `.expect()` that would abort the instance if a future
+    // refactor decoupled the two.
+    let (Some(session_handle), Some(store_handle)) = (request.session, request.repetition) else {
+        return state.add_error(AbiDiagnostic::new(
+            "E_ABI_WIRE_VALUE",
+            "diverse generation requires a decoded session and repetition handle",
+        ));
     };
-    let store = match state.get(store_handle) {
-        Some(HandleValue::Repetition(store)) => store,
-        Some(value) => {
-            return state.add_error(wrong_kind(
-                store_handle,
-                HandleKind::Repetition,
-                value.kind(),
-            ));
-        }
-        None => return state.add_error(stale_handle(store_handle)),
+    let session = match state.session(session_handle) {
+        Ok(session) => session,
+        Err(diagnostic) => return state.add_error(diagnostic),
+    };
+    let store = match state.repetition(store_handle) {
+        Ok(store) => store,
+        Err(diagnostic) => return state.add_error(diagnostic),
     };
     let result = (|| -> MecoResult<Vec<u8>> {
         let mut session = session.try_borrow_mut().map_err(|_| {

@@ -88,10 +88,16 @@ fn filesystem_metadata_forms_evaluate_host_inputs_and_rule_parameters() {
         .iter()
         .map(|candidate| (candidate.production_id(), candidate.base_weight()))
         .collect::<Vec<_>>();
-    assert_eq!(weights[0], ("explicit", Rational::new(42, 1).expect("number")));
+    assert_eq!(
+        weights[0],
+        ("explicit", Rational::new(42, 1).expect("number"))
+    );
     assert_eq!(weights[1].1, Rational::new(42, 1).expect("number"));
     assert_eq!(weights[2], ("stable-default", Rational::ONE));
-    assert_eq!(weights[3], ("static-three", Rational::new(3, 1).expect("number")));
+    assert_eq!(
+        weights[3],
+        ("static-three", Rational::new(3, 1).expect("number"))
+    );
 }
 
 fn request_data(mood: &str, urgency: Rational, enabled: bool) -> Vec<DataBinding> {

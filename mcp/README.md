@@ -24,8 +24,10 @@ already works in this repository.
 ## Tools
 
 Each tool maps to one `meco` subcommand. `source` and `artifactPath` are resolved against
-`MECO_PROJECT_ROOT` (or this repository, by default) if given as a relative path, so the server
-behaves the same regardless of the working directory the MCP client launches it from.
+`MECO_PROJECT_ROOT` (or this repository, by default), so the server behaves the same regardless of
+the working directory the MCP client launches it from. Every resolved path — relative or absolute —
+must stay within that root; a `..`-escape or an absolute path pointing elsewhere on the host is
+rejected, since a tool argument here may itself relay untrusted content.
 
 | Tool                     | `meco` command      | Notable arguments                                   |
 | ------------------------ | ------------------- | --------------------------------------------------- |

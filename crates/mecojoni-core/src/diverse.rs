@@ -204,12 +204,16 @@ impl RepetitionSnapshot {
         let pinned = decoder.boolean()?;
         let expires_at_revision = decoder.optional_u64()?;
         let structural_count = decoder.len()?;
-        let mut structural = Vec::with_capacity(structural_count);
+        // No profile window bounds the number of distinct rules, so the claimed
+        // count cannot be trusted for pre-allocation: growing on push instead
+        // bounds the allocation by bytes actually present in the decoder.
+        let mut structural = Vec::new();
         for _ in 0..structural_count {
             let rule = decoder.string()?;
             let count = decoder.len()?;
             if count
-                > usize::try_from(LocationProfile::DEFAULT.soft_cooldown_horizon).unwrap_or(usize::MAX)
+                > usize::try_from(LocationProfile::DEFAULT.soft_cooldown_horizon)
+                    .unwrap_or(usize::MAX)
             {
                 return Err(snapshot_limit(
                     "structural history exceeds its profile window",
@@ -250,7 +254,9 @@ impl RepetitionSnapshot {
         let mut edges = Vec::with_capacity(edge_count);
         for _ in 0..edge_count {
             let fragment_count = decoder.len()?;
-            let mut phrase = Vec::with_capacity(fragment_count);
+            // Same reasoning as structural_count above: fragment_count is not
+            // bounded by a profile window, so grow on push rather than trust it.
+            let mut phrase = Vec::new();
             for _ in 0..fragment_count {
                 phrase.push(decoder.string()?);
             }
@@ -1481,12 +1487,14 @@ fn state_error(code: DiagnosticCode, message: &str) -> MecoError {
 #[cfg(test)]
 mod tests {
     use alloc::string::ToString;
+    use alloc::vec::Vec;
 
     use super::{
         CountedHistory, DiverseGenerationRequest, FragmentHistory, RepetitionSnapshot,
         RepetitionStore, SamplerSession, SessionSnapshot, SnapshotPolicy, edge_fragments,
-        normalize_text,
+        normalize_text, push_u32, push_u64,
     };
+    use crate::diverse::SNAPSHOT_VERSION;
     use crate::{
         DiagnosticCode, LocationProfile, PackageInput, PackageSource, SourceFile, SourceId,
         compile_package,
@@ -1675,5 +1683,39 @@ mod tests {
                 .code(),
             DiagnosticCode::SNAPSHOT
         );
+    }
+
+    #[test]
+    fn snapshot_rejects_oversized_claimed_counts_without_large_allocation() {
+        // structural_count has no profile-window bound, so a tiny crafted
+        // buffer claiming u32::MAX entries must fail on the first missing
+        // byte rather than pre-allocating a multi-gigabyte Vec.
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"MECR");
+        push_u32(&mut bytes, SNAPSHOT_VERSION);
+        push_u64(&mut bytes, 0); // revision
+        push_u64(&mut bytes, 0); // declared logical bytes
+        bytes.push(0); // pinned
+        bytes.push(0); // no expiry
+        push_u32(&mut bytes, u32::MAX); // structural_count: claims 4B entries
+        let error = RepetitionSnapshot::from_bytes(&bytes)
+            .expect_err("truncated oversized structural_count fails");
+        assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::SNAPSHOT);
+
+        // Same shape for fragment_count nested inside an edge phrase.
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"MECR");
+        push_u32(&mut bytes, SNAPSHOT_VERSION);
+        push_u64(&mut bytes, 0);
+        push_u64(&mut bytes, 0);
+        bytes.push(0);
+        bytes.push(0);
+        push_u32(&mut bytes, 0); // structural_count: none
+        push_u32(&mut bytes, 0); // exact_count: none
+        push_u32(&mut bytes, 1); // edge_count: one phrase
+        push_u32(&mut bytes, u32::MAX); // fragment_count: claims 4B fragments
+        let error = RepetitionSnapshot::from_bytes(&bytes)
+            .expect_err("truncated oversized fragment_count fails");
+        assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::SNAPSHOT);
     }
 }

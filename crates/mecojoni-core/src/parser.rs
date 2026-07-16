@@ -385,9 +385,8 @@ fn parse_weight_prefix<'a>(
             None,
         )
     } else {
-        let expression = parse_weight_expression(metadata).map_err(|message| {
-            failure(DiagnosticCode::WEIGHT_SYNTAX, metadata_span, message)
-        })?;
+        let expression = parse_weight_expression(metadata)
+            .map_err(|message| failure(DiagnosticCode::WEIGHT_SYNTAX, metadata_span, message))?;
         (
             WeightSyntax::Dynamic(Spanned::new(expression, metadata_span)),
             None,
@@ -1223,13 +1222,18 @@ enum WeightToken<'a> {
     Right,
 }
 
+/// Recursive-descent parsers for weight and guard expressions cap nesting at
+/// this depth so a source line of adversarial `(((...)))` or `not not not...`
+/// tokens fails with a diagnostic instead of overflowing the native stack.
+const MAX_EXPRESSION_DEPTH: usize = 256;
+
 fn parse_weight_expression(source: &str) -> Result<WeightExpression, String> {
     let tokens = lex_weight_expression(source)?;
     let mut parser = WeightParser {
         tokens: &tokens,
         cursor: 0,
     };
-    let expression = parser.parse_additive()?;
+    let expression = parser.parse_additive(0)?;
     if parser.cursor != tokens.len() {
         return Err("unexpected token in weight expression".to_string());
     }
@@ -1303,22 +1307,22 @@ struct WeightParser<'a, 'source> {
 }
 
 impl WeightParser<'_, '_> {
-    fn parse_additive(&mut self) -> Result<WeightExpression, String> {
-        let mut left = self.parse_multiplicative()?;
+    fn parse_additive(&mut self, depth: usize) -> Result<WeightExpression, String> {
+        let mut left = self.parse_multiplicative(depth)?;
         loop {
             match self.tokens.get(self.cursor) {
                 Some(WeightToken::Plus) => {
                     self.cursor += 1;
                     left = WeightExpression::Add(
                         Box::new(left),
-                        Box::new(self.parse_multiplicative()?),
+                        Box::new(self.parse_multiplicative(depth)?),
                     );
                 }
                 Some(WeightToken::Minus) => {
                     self.cursor += 1;
                     left = WeightExpression::Subtract(
                         Box::new(left),
-                        Box::new(self.parse_multiplicative()?),
+                        Box::new(self.parse_multiplicative(depth)?),
                     );
                 }
                 _ => return Ok(left),
@@ -1326,16 +1330,16 @@ impl WeightParser<'_, '_> {
         }
     }
 
-    fn parse_multiplicative(&mut self) -> Result<WeightExpression, String> {
-        let mut left = self.parse_primary()?;
+    fn parse_multiplicative(&mut self, depth: usize) -> Result<WeightExpression, String> {
+        let mut left = self.parse_primary(depth)?;
         while self.tokens.get(self.cursor) == Some(&WeightToken::Star) {
             self.cursor += 1;
-            left = WeightExpression::Multiply(Box::new(left), Box::new(self.parse_primary()?));
+            left = WeightExpression::Multiply(Box::new(left), Box::new(self.parse_primary(depth)?));
         }
         Ok(left)
     }
 
-    fn parse_primary(&mut self) -> Result<WeightExpression, String> {
+    fn parse_primary(&mut self, depth: usize) -> Result<WeightExpression, String> {
         let Some(token) = self.tokens.get(self.cursor).copied() else {
             return Err("weight expression ends before a value".to_string());
         };
@@ -1346,7 +1350,13 @@ impl WeightParser<'_, '_> {
                 .map_err(|error| format!("invalid weight number: {error}")),
             WeightToken::Name(name) => Ok(WeightExpression::Name(name.to_string())),
             WeightToken::Left => {
-                let expression = self.parse_additive()?;
+                let depth = depth + 1;
+                if depth > MAX_EXPRESSION_DEPTH {
+                    return Err(format!(
+                        "weight expression nesting exceeds the {MAX_EXPRESSION_DEPTH}-level limit"
+                    ));
+                }
+                let expression = self.parse_additive(depth)?;
                 if self.tokens.get(self.cursor) != Some(&WeightToken::Right) {
                     return Err("weight expression is missing `)`".to_string());
                 }
@@ -1383,7 +1393,7 @@ fn parse_guard_expression(source: &str) -> Result<GuardExpression, String> {
         tokens: &tokens,
         cursor: 0,
     };
-    let expression = parser.parse_or()?;
+    let expression = parser.parse_or(0)?;
     if parser.cursor != tokens.len() {
         return Err("unexpected token in guard expression".to_string());
     }
@@ -1470,32 +1480,44 @@ struct GuardParser<'a> {
 }
 
 impl GuardParser<'_> {
-    fn parse_or(&mut self) -> Result<GuardExpression, String> {
-        let mut left = self.parse_and()?;
+    fn parse_or(&mut self, depth: usize) -> Result<GuardExpression, String> {
+        let mut left = self.parse_and(depth)?;
         while self.tokens.get(self.cursor) == Some(&GuardToken::Or) {
             self.cursor += 1;
-            left = GuardExpression::Or(Box::new(left), Box::new(self.parse_and()?));
+            left = GuardExpression::Or(Box::new(left), Box::new(self.parse_and(depth)?));
         }
         Ok(left)
     }
 
-    fn parse_and(&mut self) -> Result<GuardExpression, String> {
-        let mut left = self.parse_not()?;
+    fn parse_and(&mut self, depth: usize) -> Result<GuardExpression, String> {
+        let mut left = self.parse_not(depth)?;
         while self.tokens.get(self.cursor) == Some(&GuardToken::And) {
             self.cursor += 1;
-            left = GuardExpression::And(Box::new(left), Box::new(self.parse_not()?));
+            left = GuardExpression::And(Box::new(left), Box::new(self.parse_not(depth)?));
         }
         Ok(left)
     }
 
-    fn parse_not(&mut self) -> Result<GuardExpression, String> {
+    fn parse_not(&mut self, depth: usize) -> Result<GuardExpression, String> {
         if self.tokens.get(self.cursor) == Some(&GuardToken::Not) {
             self.cursor += 1;
-            return Ok(GuardExpression::Not(Box::new(self.parse_not()?)));
+            let depth = depth + 1;
+            if depth > MAX_EXPRESSION_DEPTH {
+                return Err(format!(
+                    "guard expression nesting exceeds the {MAX_EXPRESSION_DEPTH}-level limit"
+                ));
+            }
+            return Ok(GuardExpression::Not(Box::new(self.parse_not(depth)?)));
         }
         if self.tokens.get(self.cursor) == Some(&GuardToken::Left) {
             self.cursor += 1;
-            let expression = self.parse_or()?;
+            let depth = depth + 1;
+            if depth > MAX_EXPRESSION_DEPTH {
+                return Err(format!(
+                    "guard expression nesting exceeds the {MAX_EXPRESSION_DEPTH}-level limit"
+                ));
+            }
+            let expression = self.parse_or(depth)?;
             if self.tokens.get(self.cursor) != Some(&GuardToken::Right) {
                 return Err("guard expression is missing `)`".to_string());
             }
@@ -1825,6 +1847,30 @@ mod tests {
         let error = parse_module(&source).expect_err("clause order must fail");
 
         assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::CLAUSE_ORDER);
+    }
+
+    #[test]
+    fn deeply_nested_weight_and_guard_expressions_fail_without_overflowing_the_stack() {
+        let opens = "(".repeat(10_000);
+        let closes = ")".repeat(10_000);
+        let weight_source = source(&alloc::format!(
+            "# bad\n- [{opens}urgency{closes}] Hello.\n"
+        ));
+        let error = parse_module(&weight_source).expect_err("nesting past the limit must fail");
+        assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::WEIGHT_SYNTAX);
+
+        let guard_source = source(&alloc::format!(
+            "# bad\n- {{{opens}mood is tense{closes}}}\n  Hello.\n"
+        ));
+        let error = parse_module(&guard_source).expect_err("nesting past the limit must fail");
+        assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::GUARD_SYNTAX);
+
+        let not_source = source(&alloc::format!(
+            "# bad\n- {{{}mood is tense}}\n  Hello.\n",
+            "not ".repeat(10_000)
+        ));
+        let error = parse_module(&not_source).expect_err("`not` chain past the limit must fail");
+        assert_eq!(error.diagnostics()[0].code(), DiagnosticCode::GUARD_SYNTAX);
     }
 
     #[test]
