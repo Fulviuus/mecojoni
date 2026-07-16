@@ -77,16 +77,16 @@ allocator, and an integration test reads a real fixture from disk.
 Implement source processing without generation shortcuts.
 
 - [x] Validate UTF-8 and normalize physical line endings.
-- [ ] Lex front matter, headings, productions, weights, comments, sigils,
+- [x] Lex front matter, headings, productions, weights, comments, sigils,
   bindings, guards, calls, strings, raw strings, and block literals.
 - [x] Preserve exact byte and Unicode-scalar source coordinates.
 - [x] Parse strict front matter without general YAML features.
 - [x] Parse rules, typed parameter headings, productions, expressions, references,
   captures, bindings, message calls, and multiline argument lists.
-- [ ] Recover from independent syntax errors and aggregate diagnostics where safe.
+- [x] Recover from independent syntax errors and aggregate diagnostics where safe.
 - [x] Reject invalid ASCII identifiers while preserving arbitrary UTF-8 terminal
   text exactly.
-- [ ] Add unit tests for every token and AST form.
+- [x] Add unit tests for every token and AST form.
 - [x] Add filesystem integration fixtures covering complete single-file sources,
   malformed inputs, CRLF, Unicode text, and exact diagnostics.
 

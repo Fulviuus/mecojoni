@@ -38,6 +38,9 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
         .expect("source offsets fit the host address space");
     let lines = collect_lines(source.text(), body_start);
     let mut rules = Vec::new();
+    let mut seen_rule_names = Vec::new();
+    let mut diagnostics = Vec::new();
+    let mut saw_rule_heading = false;
     let mut index = 0;
 
     while index < lines.len() {
@@ -46,31 +49,56 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
             continue;
         }
         if is_comment_start(lines[index].text) {
-            index = skip_comment(source, &lines, index)?;
+            match skip_comment(source, &lines, index) {
+                Ok(next) => index = next,
+                Err(error) => {
+                    diagnostics.extend(error.into_diagnostics());
+                    index = recover_to_heading(&lines, index + 1);
+                }
+            }
             continue;
         }
         if !lines[index].text.starts_with("# ") {
-            return Err(failure(
-                DiagnosticCode::RULE_SYNTAX,
-                line_span(source, lines[index]),
-                "module body content must belong to a `# rule` heading",
-            ));
+            diagnostics.extend(
+                failure(
+                    DiagnosticCode::RULE_SYNTAX,
+                    line_span(source, lines[index]),
+                    "module body content must belong to a `# rule` heading",
+                )
+                .into_diagnostics(),
+            );
+            index = recover_to_heading(&lines, index + 1);
+            continue;
         }
 
+        saw_rule_heading = true;
         let heading = lines[index];
-        let (name, parameters) = parse_heading(source, heading)?;
-        if rules
+        let (name, parameters) = match parse_heading(source, heading) {
+            Ok(heading) => heading,
+            Err(error) => {
+                diagnostics.extend(error.into_diagnostics());
+                index = recover_to_heading(&lines, index + 1);
+                continue;
+            }
+        };
+        let duplicate = seen_rule_names
             .iter()
-            .any(|rule: &RuleSyntax| rule.name.value() == name.value())
-        {
-            return Err(failure(
-                DiagnosticCode::DUPLICATE_RULE,
-                name.span(),
-                format!("duplicate rule `{}`", name.value()),
-            ));
+            .any(|seen: &String| seen == name.value());
+        if duplicate {
+            diagnostics.extend(
+                failure(
+                    DiagnosticCode::DUPLICATE_RULE,
+                    name.span(),
+                    format!("duplicate rule `{}`", name.value()),
+                )
+                .into_diagnostics(),
+            );
+        } else {
+            seen_rule_names.push(name.value().clone());
         }
         index += 1;
         let mut productions = Vec::new();
+        let mut saw_production = false;
 
         while index < lines.len() {
             let line = lines[index];
@@ -79,20 +107,32 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
                 continue;
             }
             if is_comment_start(line.text) {
-                index = skip_comment(source, &lines, index)?;
+                match skip_comment(source, &lines, index) {
+                    Ok(next) => index = next,
+                    Err(error) => {
+                        diagnostics.extend(error.into_diagnostics());
+                        index = recover_to_production_or_heading(&lines, index + 1);
+                    }
+                }
                 continue;
             }
             if line.text.starts_with("# ") {
                 break;
             }
             if !line.text.starts_with("- ") {
-                return Err(failure(
-                    DiagnosticCode::PRODUCTION_SYNTAX,
-                    line_span(source, line),
-                    "a rule body contains only `- production` items",
-                ));
+                diagnostics.extend(
+                    failure(
+                        DiagnosticCode::PRODUCTION_SYNTAX,
+                        line_span(source, line),
+                        "a rule body contains only `- production` items",
+                    )
+                    .into_diagnostics(),
+                );
+                index = recover_to_production_or_heading(&lines, index + 1);
+                continue;
             }
 
+            saw_production = true;
             let start = index;
             index += 1;
             while index < lines.len() {
@@ -103,15 +143,25 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
                     break;
                 }
             }
-            productions.push(parse_production(source, &lines[start..index])?);
+            match parse_production(source, &lines[start..index]) {
+                Ok(production) => productions.push(production),
+                Err(error) => diagnostics.extend(error.into_diagnostics()),
+            }
         }
 
-        if productions.is_empty() {
-            return Err(failure(
-                DiagnosticCode::RULE_SYNTAX,
-                line_span(source, heading),
-                format!("rule `{}` requires at least one production", name.value()),
-            ));
+        if !saw_production {
+            diagnostics.extend(
+                failure(
+                    DiagnosticCode::RULE_SYNTAX,
+                    line_span(source, heading),
+                    format!("rule `{}` requires at least one production", name.value()),
+                )
+                .into_diagnostics(),
+            );
+            continue;
+        }
+        if productions.is_empty() || duplicate {
+            continue;
         }
         let end = productions
             .last()
@@ -131,7 +181,11 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
         });
     }
 
-    if rules.is_empty() {
+    if !diagnostics.is_empty() {
+        let primary = diagnostics.remove(0);
+        return Err(MecoError::with_related(primary, diagnostics));
+    }
+    if rules.is_empty() && !saw_rule_heading {
         return Err(failure(
             DiagnosticCode::RULE_SYNTAX,
             empty_span(source, body_start),
@@ -143,6 +197,23 @@ pub fn parse_module(source: &SourceFile) -> MecoResult<ModuleSyntax> {
         front_matter,
         rules,
     })
+}
+
+fn recover_to_heading(lines: &[Line<'_>], mut index: usize) -> usize {
+    while index < lines.len() && !lines[index].text.starts_with("# ") {
+        index += 1;
+    }
+    index
+}
+
+fn recover_to_production_or_heading(lines: &[Line<'_>], mut index: usize) -> usize {
+    while index < lines.len()
+        && !lines[index].text.starts_with("# ")
+        && !lines[index].text.starts_with("- ")
+    {
+        index += 1;
+    }
+    index
 }
 
 fn parse_heading(
@@ -503,7 +574,7 @@ fn parse_body(source: &SourceFile, lines: &[(&str, usize, usize)]) -> MecoResult
             "multiline visible text uses a `|` or `|raw` block",
         ));
     }
-    parse_inline_body(source, first.0, first.1, first.2)
+    parse_inline_body(source, first.0, first.1, first.2, false)
 }
 
 fn parse_multiline_call(
@@ -611,6 +682,34 @@ fn parse_block(
         ));
     }
     let content_lines = &lines[1..];
+    let mut parsed_lines = Vec::new();
+    if !raw {
+        for (line, start, end) in content_lines {
+            if line.is_empty() {
+                parsed_lines.push(Vec::new());
+                continue;
+            }
+            let parsed = parse_inline_body(source, line, *start, *end, true)?;
+            let BodySyntax::Parts(parts) = parsed else {
+                return Err(failure(
+                    DiagnosticCode::BLOCK_SYNTAX,
+                    span(source, *start, *end),
+                    "cooked block lines contain interpolation parts, not empty bodies or blocks",
+                ));
+            };
+            if parts
+                .iter()
+                .any(|part| matches!(part, BodyPartSyntax::MessageCall(_)))
+            {
+                return Err(failure(
+                    DiagnosticCode::BLOCK_SYNTAX,
+                    span(source, *start, *end),
+                    "a complete message cannot be embedded in a cooked block",
+                ));
+            }
+            parsed_lines.push(parts);
+        }
+    }
     let mut text = String::new();
     for (index, (line, _, _)) in content_lines.iter().enumerate() {
         text.push_str(line);
@@ -637,8 +736,39 @@ fn parse_block(
         content_lines[0].1,
         content_lines.last().expect("content").2,
     );
+    let parts = if raw {
+        None
+    } else {
+        let kept = match chomp {
+            BlockChomp::Keep => parsed_lines.len(),
+            BlockChomp::Clip | BlockChomp::Strip => content_lines
+                .iter()
+                .rposition(|(line, _, _)| !line.is_empty())
+                .map_or(0, |index| index + 1),
+        };
+        let mut parts = Vec::new();
+        for index in 0..kept {
+            parts.append(&mut parsed_lines[index]);
+            if index + 1 < kept {
+                let next_original_start = content_lines[index + 1].1 - 2;
+                parts.push(BodyPartSyntax::Literal(Spanned::new(
+                    "\n".to_string(),
+                    span(source, content_lines[index].2, next_original_start),
+                )));
+            }
+        }
+        if !matches!(chomp, BlockChomp::Strip) {
+            let at = content_lines.last().expect("content").2;
+            parts.push(BodyPartSyntax::Literal(Spanned::new(
+                "\n".to_string(),
+                empty_span(source, at),
+            )));
+        }
+        Some(parts)
+    };
     Ok(BodySyntax::Block(BlockSyntax {
         text: Spanned::new(text, text_span),
+        parts,
         raw,
         chomp,
         span: span(source, lines[0].1, lines.last().expect("body").2),
@@ -651,12 +781,15 @@ fn parse_inline_body(
     text: &str,
     start: usize,
     end: usize,
+    allow_boundary_whitespace: bool,
 ) -> MecoResult<BodySyntax> {
     let body_span = span(source, start, end);
     if text == "\"\"" {
         return Ok(BodySyntax::Empty(body_span));
     }
-    if text.is_empty() || text.starts_with(' ') || text.ends_with(' ') {
+    if text.is_empty()
+        || (!allow_boundary_whitespace && (text.starts_with(' ') || text.ends_with(' ')))
+    {
         return Err(failure(
             DiagnosticCode::BODY_SYNTAX,
             body_span,
@@ -846,10 +979,11 @@ fn parse_complete_call(
         let Some(argument_source) = rest.strip_prefix(" <-") else {
             return Ok(None);
         };
-        let arguments_start = start + name_end + 3;
+        let leading = argument_source.len() - argument_source.trim_start_matches(' ').len();
+        let arguments_start = start + name_end + 3 + leading;
         parse_arguments(
             source,
-            argument_source.trim_start_matches([' ', '\n']),
+            argument_source.trim_start_matches(' '),
             arguments_start,
         )?
     };
@@ -1587,8 +1721,8 @@ fn failure(code: DiagnosticCode, span: Span, message: impl Into<String>) -> Meco
 mod tests {
     use super::parse_module;
     use crate::{
-        BodyPartSyntax, BodySyntax, ClauseSyntax, DiagnosticCode, SourceFile, SourceId,
-        WeightExpression, WeightSyntax,
+        BlockChomp, BodyPartSyntax, BodySyntax, ClauseSyntax, DiagnosticCode, GuardExpression,
+        GuardValue, SourceFile, SourceId, ValueSyntax, WeightExpression, WeightSyntax,
     };
 
     fn source(body: &str) -> SourceFile {
@@ -1705,5 +1839,238 @@ mod tests {
             module.rules[1].productions[0].body,
             BodySyntax::Block(ref block) if block.text.value() == "<!-- raw block -->"
         ));
+    }
+
+    #[test]
+    fn parses_every_output_escape_exactly() {
+        let source = source(concat!(
+            "# escaped\n",
+            r#"- \\ \" \n \r \t \@ \$ \& \//"#,
+            "\n",
+        ));
+        let module = parse_module(&source).expect("escape table parses");
+        let BodySyntax::Parts(parts) = &module.rules[0].productions[0].body else {
+            panic!("expected inline parts");
+        };
+        let actual = parts
+            .iter()
+            .map(|part| match part {
+                BodyPartSyntax::Literal(literal) => literal.value().as_str(),
+                _ => panic!("escaped sigils remain literal"),
+            })
+            .collect::<alloc::string::String>();
+
+        assert_eq!(actual, "\\ \" \n \r \t @ $ & //");
+    }
+
+    #[test]
+    fn weight_and_guard_operators_obey_their_precedence() {
+        let source = source(concat!(
+            "# weighted\n",
+            "- [weight = (urgency + 2) * scale - 1] ",
+            "{not active and count >= 2 or mood is not \"calm\"} Ready.\n",
+        ));
+        let module = parse_module(&source).expect("expressions parse");
+        let production = &module.rules[0].productions[0];
+        let WeightSyntax::Dynamic(weight) = &production.weight else {
+            panic!("expected dynamic weight");
+        };
+        assert!(matches!(
+            weight.value(),
+            WeightExpression::Subtract(left, right)
+                if matches!(left.as_ref(), WeightExpression::Multiply(_, _))
+                    && matches!(right.as_ref(), WeightExpression::Literal(_))
+        ));
+        let ClauseSyntax::Guard(guard) = &production.clauses[0] else {
+            panic!("expected guard");
+        };
+        assert!(matches!(
+            guard.value(),
+            GuardExpression::Or(left, right)
+                if matches!(left.as_ref(), GuardExpression::And(not, greater_equal)
+                    if matches!(not.as_ref(), GuardExpression::Not(_))
+                        && matches!(greater_equal.as_ref(), GuardExpression::GreaterOrEqual(
+                            GuardValue::Name(name), GuardValue::Number(_)
+                        ) if name == "count"))
+                    && matches!(right.as_ref(), GuardExpression::IsNot(
+                        GuardValue::Name(name), GuardValue::Text(text)
+                    ) if name == "mood" && text == "calm")
+        ));
+    }
+
+    #[test]
+    fn parses_every_guard_comparison_form() {
+        let source = source(concat!(
+            "# guards\n",
+            "- {left is right} is\n",
+            "- {left is not right} is-not\n",
+            "- {left < 1} less\n",
+            "- {left <= 1} less-equal\n",
+            "- {left > 1} greater\n",
+            "- {left >= 1} greater-equal\n",
+            "- {true} boolean-value\n",
+        ));
+        let module = parse_module(&source).expect("all guard comparisons parse");
+        let guards = module.rules[0]
+            .productions
+            .iter()
+            .map(|production| match &production.clauses[0] {
+                ClauseSyntax::Guard(guard) => guard.value(),
+                ClauseSyntax::Binding(_) => panic!("expected guard"),
+            })
+            .collect::<alloc::vec::Vec<_>>();
+
+        assert!(matches!(guards[0], GuardExpression::Is(_, _)));
+        assert!(matches!(guards[1], GuardExpression::IsNot(_, _)));
+        assert!(matches!(guards[2], GuardExpression::Less(_, _)));
+        assert!(matches!(guards[3], GuardExpression::LessOrEqual(_, _)));
+        assert!(matches!(guards[4], GuardExpression::Greater(_, _)));
+        assert!(matches!(guards[5], GuardExpression::GreaterOrEqual(_, _)));
+        assert!(matches!(
+            guards[6],
+            GuardExpression::Value(GuardValue::Boolean(true))
+        ));
+    }
+
+    #[test]
+    fn parses_empty_output_and_delimited_reference_boundaries() {
+        let source = source(concat!(
+            "# forms\n",
+            "- \"\"\n",
+            "- @{creature}s greet ${player}.\n",
+        ));
+        let module = parse_module(&source).expect("body boundary forms parse");
+
+        assert!(matches!(
+            module.rules[0].productions[0].body,
+            BodySyntax::Empty(_)
+        ));
+        assert!(matches!(
+            &module.rules[0].productions[1].body,
+            BodySyntax::Parts(parts)
+                if matches!(&parts[0], BodyPartSyntax::RuleReference(rule)
+                    if rule.value() == "creature")
+                    && matches!(&parts[1], BodyPartSyntax::Literal(text)
+                        if text.value() == "s greet ")
+                    && matches!(&parts[2], BodyPartSyntax::ValueReference(value)
+                        if value.value() == "player")
+        ));
+    }
+
+    #[test]
+    fn parses_every_argument_value_and_multiline_punning() {
+        let source = source(concat!(
+            "# calls\n",
+            "- @target <- name: $value, count: 2, label: \"hi\", enabled: true, $other\n",
+            "- &notice <-\n",
+            "    name: $value\n",
+            "    $other\n",
+        ));
+        let module = parse_module(&source).expect("calls parse");
+        let BodySyntax::Parts(first_parts) = &module.rules[0].productions[0].body else {
+            panic!("expected rule call");
+        };
+        let BodyPartSyntax::RuleCall(call) = &first_parts[0] else {
+            panic!("expected rule call");
+        };
+
+        assert_eq!(call.arguments.len(), 5);
+        assert!(matches!(call.arguments[0].value, ValueSyntax::Reference(_)));
+        assert!(matches!(call.arguments[1].value, ValueSyntax::Number(_)));
+        assert!(matches!(call.arguments[2].value, ValueSyntax::Text(_)));
+        assert!(matches!(call.arguments[3].value, ValueSyntax::Boolean(_)));
+        assert!(call.arguments[4].punned);
+        assert_eq!(
+            call.arguments[0].name.span().start().byte(),
+            call.arguments[0].span.start().byte()
+        );
+
+        let BodySyntax::Parts(second_parts) = &module.rules[0].productions[1].body else {
+            panic!("expected message call");
+        };
+        let BodyPartSyntax::MessageCall(call) = &second_parts[0] else {
+            panic!("expected message call");
+        };
+        assert_eq!(call.arguments.len(), 2);
+        assert!(!call.arguments[0].punned);
+        assert!(call.arguments[1].punned);
+    }
+
+    #[test]
+    fn parses_all_cooked_and_raw_block_chomp_forms() {
+        let source = source(concat!(
+            "# blocks\n",
+            "- |\n  @name\n  \n",
+            "- |-\n  @name\n  \n",
+            "- |+\n  @name\n  \n",
+            "- |raw\n  @name\n  \n",
+            "- |raw-\n  @name\n  \n",
+            "- |raw+\n  @name\n  \n",
+        ));
+        let module = parse_module(&source).expect("all block markers parse");
+        let blocks = module.rules[0]
+            .productions
+            .iter()
+            .map(|production| match &production.body {
+                BodySyntax::Block(block) => block,
+                _ => panic!("expected block"),
+            })
+            .collect::<alloc::vec::Vec<_>>();
+
+        assert_eq!(blocks.len(), 6);
+        assert_eq!(blocks[0].chomp, BlockChomp::Clip);
+        assert_eq!(blocks[0].text.value(), "@name\n");
+        assert_eq!(blocks[1].chomp, BlockChomp::Strip);
+        assert_eq!(blocks[1].text.value(), "@name");
+        assert_eq!(blocks[2].chomp, BlockChomp::Keep);
+        assert_eq!(blocks[2].text.value(), "@name\n\n");
+        assert!(
+            blocks[..3]
+                .iter()
+                .all(|block| !block.raw && block.parts.is_some())
+        );
+        assert!(
+            blocks[3..]
+                .iter()
+                .all(|block| block.raw && block.parts.is_none())
+        );
+        assert_eq!(blocks[3].text.value(), "@name\n");
+        assert_eq!(blocks[4].text.value(), "@name");
+        assert_eq!(blocks[5].text.value(), "@name\n\n");
+    }
+
+    #[test]
+    fn recovers_only_at_independent_rule_and_production_boundaries() {
+        let source = source(concat!(
+            "orphan\n",
+            "# bad-weight\n",
+            "- [0] never\n",
+            "# bad-escape\n",
+            "- bad \\q\n",
+            "- this production is independently valid\n",
+            "# repeated\n",
+            "- [0] invalid first declaration\n",
+            "# repeated\n",
+            "- duplicate is still diagnosed\n",
+            "# valid\n",
+            "- valid\n",
+        ));
+        let error = parse_module(&source).expect_err("independent errors are returned together");
+        let codes = error
+            .diagnostics()
+            .iter()
+            .map(crate::Diagnostic::code)
+            .collect::<alloc::vec::Vec<_>>();
+
+        assert_eq!(
+            codes,
+            alloc::vec![
+                DiagnosticCode::RULE_SYNTAX,
+                DiagnosticCode::WEIGHT_SYNTAX,
+                DiagnosticCode::ESCAPE_SYNTAX,
+                DiagnosticCode::WEIGHT_SYNTAX,
+                DiagnosticCode::DUPLICATE_RULE,
+            ]
+        );
     }
 }

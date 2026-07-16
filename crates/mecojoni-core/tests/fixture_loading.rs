@@ -412,6 +412,37 @@ fn invalid_body_fixtures_match_codes_and_exact_source_spans() {
 }
 
 #[test]
+fn independent_syntax_errors_are_aggregated_from_a_real_fixture() {
+    let source_path = fixture_path("invalid/independent-errors.meco.md");
+    let expected_path = fixture_path("expected/independent-errors.diags");
+    let source_text = fs::read_to_string(&source_path).expect("read recovery fixture");
+    let expected = fs::read_to_string(expected_path).expect("read expected diagnostics");
+    let source = SourceFile::new(
+        SourceId::new(0),
+        source_path.display().to_string(),
+        source_text,
+    );
+    let error = parse_module(&source).expect_err("recovery fixture must fail");
+    let actual = error
+        .diagnostics()
+        .iter()
+        .map(|diagnostic| {
+            let diagnostic_span = diagnostic.span().expect("parser diagnostic has a span");
+            let start = usize::try_from(diagnostic_span.start().byte()).expect("start fits");
+            let end = usize::try_from(diagnostic_span.end().byte()).expect("end fits");
+            format!(
+                "{}|{}",
+                diagnostic.code().as_str(),
+                &source.text()[start..end]
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    assert_eq!(actual, expected.trim_end());
+}
+
+#[test]
 fn composition_audit_matches_the_checked_in_finding_contract() {
     let source_path = fixture_path("valid/composition-audit.meco.md");
     let expected_path = fixture_path("expected/composition-audit.findings");
@@ -494,4 +525,52 @@ fn unicode_terminal_text_and_crlf_normalization_match_from_a_real_fixture() {
         _ => panic!("expected inline body"),
     };
     assert!(literal_span.byte_len() > literal_span.scalar_len());
+}
+
+#[test]
+fn cooked_block_interpolation_and_raw_blocks_are_distinct_in_a_real_fixture() {
+    let path = fixture_path("valid/cooked-block.meco.md");
+    let source_text = fs::read_to_string(&path).expect("read block fixture");
+    let source = SourceFile::new(SourceId::new(0), path.display().to_string(), source_text);
+    let module = parse_module(&source).expect("block fixture parses");
+    let BodySyntax::Block(cooked) = &module.rules[0].productions[0].body else {
+        panic!("expected cooked block");
+    };
+    let BodySyntax::Block(kept) = &module.rules[1].productions[0].body else {
+        panic!("expected kept block");
+    };
+    let BodySyntax::Block(raw) = &module.rules[2].productions[0].body else {
+        panic!("expected raw block");
+    };
+
+    let cooked_parts = cooked
+        .parts
+        .as_ref()
+        .expect("cooked block has parsed parts");
+    assert!(cooked_parts.iter().any(
+        |part| matches!(part, BodyPartSyntax::RuleReference(name) if name.value() == "person")
+    ));
+    assert!(cooked_parts.iter().any(
+        |part| matches!(part, BodyPartSyntax::ValueReference(name) if name.value() == "playerName")
+    ));
+    assert!(
+        cooked_parts
+            .iter()
+            .any(|part| matches!(part, BodyPartSyntax::Literal(text) if text.value() == "\n"))
+    );
+    assert_eq!(
+        cooked.text.value(),
+        "Hello, @person.\nWelcome, $playerName!"
+    );
+    assert_eq!(kept.text.value(), "  @person\n");
+    assert!(
+        kept.parts
+            .as_ref()
+            .expect("cooked kept parts")
+            .iter()
+            .any(|part| matches!(part, BodyPartSyntax::Literal(text) if text.value() == "  "))
+    );
+    assert!(raw.raw);
+    assert!(raw.parts.is_none());
+    assert_eq!(raw.text.value(), "@person and $playerName stay literal.");
 }

@@ -705,13 +705,13 @@ v1/
 ## Current limitations
 
 The implementation currently provides owned UTF-8 sources, dual byte/scalar
-spans, structured diagnostics/results, complete source parsing, exact rational
-and PRNG primitives, host-supplied package validation, versioned profile records,
-the composition audit, a version-discovery WASM ABI, and target-spanning tests.
-Parser recovery, cooked-block interpolation, the compiler, generator, formatter
-adapter, complete buffer/handle ABI, JavaScript wrapper, CLI, and editor tooling
-still need to be built and verified. Until then, use v1 for executable generation
-experiments and treat v2 source as the compiler target.
+spans, ordered multi-error diagnostics, complete source parsing including cooked
+block interpolation, exact rational and PRNG primitives, host-supplied package
+validation, versioned profile records, the composition audit, a
+version-discovery WASM ABI, and target-spanning tests. The compiler, generator,
+formatter adapter, complete buffer/handle ABI, JavaScript wrapper, CLI, and editor
+tooling still need to be built and verified. Until then, use v1 for executable
+generation experiments and treat v2 source as the compiler target.
 
 ## Name
 

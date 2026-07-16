@@ -138,6 +138,8 @@ pub enum BlockChomp {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BlockSyntax {
     pub text: Spanned<String>,
+    /// Parsed interpolation parts for a cooked block; raw blocks use `None`.
+    pub parts: Option<Vec<BodyPartSyntax>>,
     pub raw: bool,
     pub chomp: BlockChomp,
     pub span: Span,

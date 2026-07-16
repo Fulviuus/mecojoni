@@ -266,6 +266,11 @@ The production's two-space indentation is removed from each block line and any
 additional indentation is preserved. Physical newlines become `\n`. The default
 clip mode (`|` or `|raw`) emits one final newline, strip (`-`) emits none, and keep
 (`+`) preserves authored trailing indented blank lines plus the final newline.
+Cooked blocks (`|`, `|-`, and `|+`) parse the same escapes, quoted segments,
+rule references and calls, captures, and value references as inline output on
+every line. A complete `&message` cannot be embedded in a cooked block because it
+must own the visible body. Raw blocks preserve all of those spellings as literal
+text.
 
 ## Comments
 
@@ -322,3 +327,10 @@ Parser-independent files under
 `crates/mecojoni-core/tests/fixtures/{valid,invalid,packages,expected}` exercise
 this contract through `std::fs`, while the production parser remains
 `no_std + alloc`.
+
+After a valid front matter header, the parser aggregates independent body
+diagnostics when it can synchronize at the next production or rule heading. It
+does not attempt speculative recovery inside expressions, strings, calls, or
+blocks. This keeps diagnostic order deterministic and avoids cascaded errors from
+partially guessed syntax. A malformed header remains an immediate error because
+its end defines where the module body begins.

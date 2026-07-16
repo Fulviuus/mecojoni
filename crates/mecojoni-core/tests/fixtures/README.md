@@ -8,5 +8,9 @@
 - `expected/` contains stable diagnostic or generated-output records. Each record
   names its source fixture and the compatibility version that produced it.
 
+Parser fixtures cover exact single diagnostics as well as ordered recovery from
+multiple independent errors. Cooked and raw block fixtures assert both normalized
+text and parsed interpolation parts.
+
 Tests must read these artifacts through `std::fs`. The production core receives
 owned source modules from the host and never performs filesystem I/O.
