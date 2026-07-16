@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use alloc::{
     collections::BTreeMap,
     string::{String, ToString},

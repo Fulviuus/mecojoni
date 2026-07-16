@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 #![cfg_attr(target_arch = "wasm32", no_std)]
 #![cfg_attr(
     not(any(target_arch = "wasm32", test)),

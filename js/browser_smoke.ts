@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 import { type MecoFormatter, Mecojoni } from "./mecojoni.ts";
 
 async function fetchText(path: string): Promise<string> {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 //! A human-readable walkthrough of the README corpus and branching-memory model.
 //!
 //! Run it with output enabled:

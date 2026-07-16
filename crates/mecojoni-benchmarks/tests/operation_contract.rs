@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use std::{fmt::Write as _, fs, path::PathBuf};
 
 use mecojoni_benchmarks::{WORKLOAD_VERSION, operation_contract, workloads};

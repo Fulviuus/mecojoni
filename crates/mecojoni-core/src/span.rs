@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use core::fmt;
 
 /// Stable identifier for one source module within a compilation package.

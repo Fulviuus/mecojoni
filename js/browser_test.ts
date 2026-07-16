@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 const workspace = new URL("../", import.meta.url);
 
 async function existingBrowser(): Promise<string | undefined> {

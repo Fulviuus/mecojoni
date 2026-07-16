@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 //! Test-only proof that Mecojoni's generic formatter boundary composes with
 //! genuine Fluent resources. This is intentionally not a production adapter.
 

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 /// Compatibility identifier for the deterministic random stream.
 pub const PRNG_VERSION: &str = "splitmix64/1";
 

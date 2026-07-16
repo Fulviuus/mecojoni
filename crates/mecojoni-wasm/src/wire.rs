@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};

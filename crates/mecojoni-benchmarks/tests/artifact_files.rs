@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use std::{fs, path::PathBuf};
 
 use mecojoni_benchmarks::{harbor_startup_package, workloads};

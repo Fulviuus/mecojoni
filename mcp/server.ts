@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 // An MCP (Model Context Protocol) server exposing the `meco` CLI as tools for
 // any MCP-compatible agent. This is a thin process wrapper: every tool below
 // builds an argv array for the real `meco` binary, runs it, and relays its

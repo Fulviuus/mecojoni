@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 import type { GenerationLimitOptions, PackageDescription } from "./mecojoni.ts";
 
 export const workloadVersion = "workloads/1";

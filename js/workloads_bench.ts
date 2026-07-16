@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 import { Mecojoni, type MessageManifest, type PackageDescription } from "./mecojoni.ts";
 import { packageDescription, workloadLimits, workloads, workloadVersion } from "./workloads.ts";
 

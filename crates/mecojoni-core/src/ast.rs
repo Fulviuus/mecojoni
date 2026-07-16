@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use alloc::{boxed::Box, string::String, vec::Vec};
 
 use crate::{FrontMatter, Rational, Span, Spanned};

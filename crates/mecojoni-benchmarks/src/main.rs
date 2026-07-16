@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use std::{
     alloc::{GlobalAlloc, Layout, System},
     sync::atomic::{AtomicU64, Ordering},

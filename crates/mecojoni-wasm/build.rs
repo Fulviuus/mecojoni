@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use std::{env, fs, path::PathBuf};
 
 fn main() {

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 //! Canonical frozen compiled artifacts.
 
 use alloc::{boxed::Box, format, string::String, vec::Vec};

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use mecojoni_core::{SourceFile, SourceId, parse_module};
 
 /// Conservative semantic formatter contract (`format/1`).

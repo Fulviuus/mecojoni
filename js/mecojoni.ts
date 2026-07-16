@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 const WIRE_VERSION = 1;
 const OP_PACKAGE_CREATE = 1;
 const OP_COMPILE = 2;

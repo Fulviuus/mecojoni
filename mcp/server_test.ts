@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 import { assert, assertEquals, assertMatch } from "jsr:@std/assert";
 import type { McpServer } from "npm:@modelcontextprotocol/sdk@^1.29.0/server/mcp.js";
 import {

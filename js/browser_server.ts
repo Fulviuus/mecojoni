@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 const workspace = new URL("../", import.meta.url);
 const routes = new Map<string, { path: URL; contentType: string }>([
   ["/", { path: new URL("js/browser_smoke.html", workspace), contentType: "text/html" }],

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use mecojoni_benchmarks::{STARTUP_PROFILE_VERSION, harbor_startup_package};
 use mecojoni_core::{
     DataBinding, GenerationRequest, Rational, Value, compile_package_with_manifest,

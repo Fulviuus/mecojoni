@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use crate::{Rational, RationalError};
 
 /// Version of the baseline diversity profile.

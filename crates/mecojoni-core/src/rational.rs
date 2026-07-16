@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MPL-2.0
 use core::{fmt, str::FromStr};
 
 /// Maximum absolute numerator and denominator accepted by `rational/1`.
