@@ -183,7 +183,12 @@ fn jsonl_reports_and_duplicate_scalar_flags_are_stable() {
     }
     let source = fixture("packages/root.meco");
     let output = meco(&["fmt", source.to_str().unwrap(), "--output=jsonl"]);
-    assert_eq!(output.status.code(), Some(0), "fmt: {}", text(&output.stderr));
+    assert_eq!(
+        output.status.code(),
+        Some(0),
+        "fmt: {}",
+        text(&output.stderr)
+    );
     assert_eq!(text(&output.stdout).lines().count(), 1);
     assert!(output.stderr.is_empty(), "fmt JSONL leaked diagnostics");
     let duplicate = meco(&["check", &root, "--output=text", "--output", "jsonl"]);
