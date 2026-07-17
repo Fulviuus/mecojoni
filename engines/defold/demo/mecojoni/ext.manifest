@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MPL-2.0
+# Defold native extension: bridges the Mecojoni C ABI (include/mecojoni.h,
+# linked from lib/<platform>/libmecojoni_ffi.a) to a Lua `mecojoni` module.
+name: "Mecojoni"

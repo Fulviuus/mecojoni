@@ -7,3 +7,8 @@
 /engines/godot/demo/bin/*.so
 /engines/godot/demo/bin/*.dll
 /engines/godot/demo/.godot/
+
+# Defold integration build outputs and staged native library
+/engines/defold/demo/build/
+/engines/defold/demo/.internal/
+/engines/defold/demo/mecojoni/lib/

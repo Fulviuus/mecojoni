@@ -1,0 +1,650 @@
+@meco 1
+@start npc-line
+
+// Mundane conversations overheard from civilians on a busy space station.
+
+# npc-line
+- [5] @arrival-line
+- [5] @canteen-line
+- [4] @work-line
+- [4] @station-life-line
+- [3] @travel-line
+- [3] @rumour-line
+- [2] @neighbour-line
+
+# arrival-line
+- I travelled @journey-distance to reach @station-name! @friendly-question
+- It took me @travel-time to get to @station-name. @arrival-reaction
+- My shuttle finally docked at @station-name. @friendly-question
+- You would not believe how many connections it takes to reach @station-name.
+- This is my first time on @station-name. I expected it to be @station-expectation.
+
+# journey-distance
+- a long way
+- three systems
+- all the way from @origin
+- farther than I care to admit
+- halfway across the sector
+
+# travel-time
+- two days
+- eleven hours
+- most of the week
+- longer than the ticket promised
+- three transfers and a very uncomfortable night
+
+# arrival-reaction
+- I could sleep for a week.
+- At least my luggage made it this time.
+- I am never booking the cheap route again.
+- Now I just need to remember where I rented a room.
+- The artificial gravity still feels a little strange.
+
+# station-expectation
+- quieter
+- cleaner
+- smaller
+- easier to navigate
+- less crowded
+
+# friendly-question
+- How's your day, friend?
+- Has the station been treating you well?
+- Know anywhere quiet to sit?
+- Is the coffee always this bad?
+- You waiting for a shuttle too?
+
+# canteen-line
+- I saw the @canteen-worker pour @strange-liquid into @soup. I'm not looking forward to trying it.
+- The @dish smells @food-smell today. I think I'll stick to ration bars.
+- They changed the menu at @canteen-name again. Somehow it got worse.
+- If you're heading to @canteen-name, avoid the @dish. Trust me.
+- I asked what was in the @dish. The @canteen-worker just changed the subject.
+- The coffee at @canteen-name is strong enough to clean engine parts.
+
+# canteen-worker
+- canteen cook
+- galley attendant
+- kitchen supervisor
+- night-shift cook
+- station innkeeper
+
+# strange-liquid
+- a strange green liquid
+- something blue and faintly luminous
+- the contents of an unlabelled bottle
+- a thick purple syrup
+- what looked like recycled coolant
+
+# soup
+- today's soup
+- the evening stew
+- the communal broth
+- a pot of noodles
+
+# dish
+- protein stew
+- mushroom noodles
+- vat-grown cutlet
+- algae dumplings
+- soup of the day
+
+# food-smell
+- metallic
+- unusually sweet
+- like hot wiring
+- better than it looks
+- exactly like the recycling deck
+
+# canteen-name
+- the Dockside Canteen
+- Comet's Rest
+- the Blue Lantern
+- the Spinward Galley
+- Counter Seven
+
+# work-line
+- My shift at @work-area starts in @time-until. I should probably get moving.
+- I've spent all day recalibrating @equipment. It still says everything is fine.
+- Someone left @cargo right outside @work-area. Again.
+- The supervisor says we're @schedule-status. The supervisor is lying.
+- I swapped shifts with @coworker. I think I got the worse end of the deal.
+- They gave me a new access badge. It opens every door except the one to my workplace.
+
+# work-area
+- cargo control
+- docking ring three
+- the recycling deck
+- customs processing
+- hydroponics
+- shuttle maintenance
+
+# time-until
+- ten minutes
+- half an hour
+- less time than I'd like
+- about an hour
+- whenever this lift decides to arrive
+
+# equipment
+- a cargo scanner
+- the oxygen monitor
+- a docking sensor
+- a service drone
+- the same broken console
+
+# cargo
+- six crates of coolant
+- a pallet of replacement filters
+- someone's luggage
+- an empty specimen container
+- two tonnes of synthetic grain
+
+# schedule-status
+- ahead of schedule
+- almost caught up
+- waiting on one last shipment
+- fully staffed
+- nearly finished
+
+# coworker
+- the new technician
+- someone from the night shift
+- my cousin
+- a cargo handler from ring two
+- the quiet engineer with the red toolbox
+
+# station-life-line
+- The lights near @station-area have been flickering since @time-reference. Nobody seems worried.
+- One of the lifts is making @odd-sound again. I'd take the stairs, if we had any.
+- They say the air recyclers are running normally. They always say that.
+- The observation deck is quiet @quiet-time. It's a good place to think.
+- I took a wrong turn near @busy-area and ended up in @remote-area. All these corridors look the same.
+- The station announcement has repeated the same apology @repeat-count. I wonder what happened.
+
+# station-area
+- the east docking ring
+- the market concourse
+- habitation deck six
+- the old customs office
+- the central lift
+
+# busy-area
+- the market concourse
+- customs processing
+- the main docking ring
+- the arrivals hall
+
+# remote-area
+- an empty service corridor
+- the hydroponics annex
+- a freight lift with no buttons
+- the station's old chapel
+- a storage room full of chairs
+
+# time-reference
+- yesterday morning
+- the last power cycle
+- my shift began
+- that freighter docked
+- maintenance checked them
+
+# odd-sound
+- a grinding noise
+- a noise like someone coughing
+- three little chimes
+- an expensive sort of rattle
+- the same tune as my alarm clock
+
+# quiet-time
+- before the morning rush
+- during the artificial night
+- when no cruise ships are docked
+- around the middle of second shift
+- just after the lights dim
+
+# repeat-count
+- four times
+- every hour today
+- since breakfast
+- for the last twenty minutes
+- often enough that I've memorised it
+
+# travel-line
+- The shuttle from @origin was held up by @delay-chain. At least the seats were warm.
+- If you're travelling to @destination, bring your own food. That's all I'll say.
+- My connection leaves from docking ring @ring-number, assuming they haven't moved it again.
+- The ticket said “direct service.” Apparently stopping at @destination still counts as direct.
+- I miss ships with windows. A camera feed is not the same thing.
+
+# delay-chain
+- [6] @delay-reason
+- [1] @delay-reason, then @delay-chain
+
+# delay-reason
+- a customs inspection
+- a docking queue
+- a navigation fault
+- an unexplained security check
+- someone's missing cargo
+- a software update
+
+# origin
+- Mars
+- Ganymede
+- the Belt
+- a mining platform near Saturn
+- the Farpoint colonies
+- the other side of the Helix
+
+# destination
+- Orison Gate
+- the Ceres shipyards
+- Vesper Relay
+- Luna
+- the outer colonies
+- Meridian Station
+
+# ring-number
+- two
+- four
+- seven
+- nine
+- twelve
+
+# rumour-line
+- I heard that @rumour-event. Probably just station gossip.
+- A dockworker told me that @rumour-event. I don't believe it, but I did lock my door.
+- Did you hear? Apparently @rumour-event. This station never stays boring for long.
+- Maintenance found @strange-find in @maintenance-place. They won't say how it got there.
+- Someone on @deck-name keeps ordering @odd-cargo. I try not to ask questions.
+
+# rumour-event
+- a maintenance drone opened a door that wasn't on the map
+- someone has been sleeping in an empty cargo pod
+- the station clock lost seven minutes last night
+- a courier arrived with a crate that was humming
+- an entire shuttle crew checked in under the same name
+- the observation windows showed the wrong stars for almost a minute
+
+# strange-find
+- a boot with no owner
+- three hundred identical spoons
+- a warm spacesuit
+- an old navigation computer
+- a crate addressed to the station itself
+
+# maintenance-place
+- an air duct
+- a sealed service tunnel
+- the back of lift four
+- a disused cargo locker
+- the ventilation intake
+
+# deck-name
+- habitation deck four
+- the agricultural ring
+- customs level
+- the old command deck
+- the visitor concourse
+
+# odd-cargo
+- empty glass jars
+- antique door handles
+- live soil
+- left-handed gloves
+- crates marked “definitely not fragile”
+
+# neighbour-line
+- My neighbour practices the same song every artificial morning. They only know the loud part.
+- The family in the next cabin adopted a cleaning drone. It follows me home now.
+- Someone upstairs keeps moving furniture during the night cycle. We don't have an upstairs.
+- The cabin beside mine has been empty for months, but its alarm goes off every morning.
+- I lent my neighbour a spanner three weeks ago. At this point, I think it belongs to them.
+
+# station-name
+- Kepler Junction
+- Orison Gate
+- Helix Nine
+- Meridian Station
+- Port Caligo
+- Lagrange Rest
+- Cinder Dock
+- Vesper Relay
+
+// Experimental fully compositional POC entry point. It is intentionally not
+// the default: its broad role cross-products create more combinations, but the
+// curated domain-specific frames above produce more believable dialogue.
+
+# composed-npc-line
+- [5] @composed-arrival-event@composed-reaction-option
+- [5] @composed-canteen-event@composed-reaction-option
+- [4] @composed-work-event@composed-reaction-option
+- [4] @composed-station-event@composed-reaction-option
+- [3] @composed-travel-event@composed-reaction-option
+- [3] @composed-rumour-event@composed-reaction-option
+- [2] @composed-neighbour-event@composed-reaction-option
+
+# composed-reaction-option
+- [7] @empty
+- [1]  @composed-reaction
+
+# composed-reaction
+- @reaction-subject @reaction-action @reaction-object.
+
+# reaction-subject
+- @reaction-subject-determiner @reaction-subject-quality @reaction-role @reaction-location
+
+# reaction-subject-determiner
+- A
+- The
+- One
+- Another
+- This
+- That
+- Some
+- Each
+
+# reaction-subject-quality
+- tired
+- curious
+- passing
+- local
+- retired
+- worried
+- restless
+- cheerful
+
+# reaction-role
+- passenger
+- coworker
+- clerk
+- technician
+- visitor
+- pilot
+- cargo handler
+- parent
+- shift worker
+- courier
+
+# reaction-location
+- nearby
+- in the queue
+- from the night shift
+- at the next table
+- by the lift
+- behind me
+- from my deck
+- at work
+
+# reaction-action
+- expected
+- requested
+- predicted
+- mentioned
+- suggested
+- promised
+
+# reaction-object
+- @reaction-determiner @reaction-quality @reaction-result
+
+# reaction-determiner
+- a
+- another
+- some
+- no
+- the same
+- our usual
+
+# reaction-quality
+- practical
+- credible
+- formal
+- quiet
+- temporary
+- useful
+
+# reaction-result
+- solution
+- explanation
+- apology
+- warning
+- answer
+- outcome
+
+# composed-arrival-event
+- @arrival-person @arrival-action from @origin to @station-name @arrival-context.
+
+# arrival-person
+- I
+- My cousin
+- A new passenger
+- The traveller behind me
+- My cabin mate
+- A cargo clerk
+
+# arrival-action
+- travelled
+- transferred
+- flew
+- came
+- took a shuttle
+- followed the freight route
+
+# arrival-context
+- after @travel-time
+- with three connections
+- without my luggage
+- before station night
+- on the cheapest ticket
+- during a docking delay
+
+# composed-canteen-event
+- @canteen-agent @canteen-action @canteen-object @canteen-context.
+
+# canteen-agent
+- The canteen cook
+- The galley attendant
+- The kitchen supervisor
+- The night-shift cook
+- The station innkeeper
+- A catering drone
+
+# canteen-action
+- served
+- relabelled
+- reheated
+- removed
+- inspected
+- quietly replaced
+
+# canteen-object
+- the @dish
+- today's soup
+- the evening stew
+- the communal broth
+- a pot of noodles
+- the coffee concentrate
+
+# canteen-context
+- at @canteen-name
+- before breakfast
+- during the meal rush
+- after a customs inspection
+- without explaining why
+- beside the ration dispenser
+
+# composed-work-event
+- @work-agent @work-action @work-object @work-context.
+
+# work-agent
+- My supervisor
+- The shift scheduler
+- A cargo manager
+- The roster terminal
+- Someone in personnel
+- The night coordinator
+
+# work-action
+- reassigned
+- cancelled
+- extended
+- duplicated
+- inspected
+- quietly deleted
+
+# work-object
+- my next shift
+- the equipment check
+- our day off
+- the cargo count
+- my access request
+- the break schedule
+
+# work-context
+- at @work-area
+- with @composed-work-time remaining
+- after a software update
+- during the shift change
+- without telling payroll
+- beside @equipment
+
+# composed-work-time
+- ten minutes
+- half an hour
+- one lift cycle
+- most of the morning
+- a single coffee break
+- less than one shift
+
+# composed-station-event
+- @station-agent @station-action @station-object @station-context.
+
+# station-agent
+- The lighting system
+- A maintenance drone
+- The announcement network
+- The central lift
+- An air recycler
+- The station computer
+
+# station-action
+- updated
+- repeated
+- misreported
+- displayed
+- reclassified
+- temporarily deleted
+
+# station-object
+- the morning apology
+- a pressure warning
+- the public map
+- the corridor signs
+- our deck schedule
+- the maintenance notice
+
+# station-context
+- near @busy-area
+- inside @remote-area
+- since yesterday morning
+- during station night
+- after the last power cycle
+- beside @station-area
+
+# composed-travel-event
+- @travel-agent @travel-action @travel-object @travel-context.
+
+# travel-agent
+- Station control
+- The ticket office
+- A shuttle dispatcher
+- Customs transit
+- The route computer
+- An elderly booking drone
+
+# travel-action
+- delayed
+- rerouted
+- cancelled
+- overbooked
+- mislabelled
+- temporarily held
+
+# travel-object
+- my connection
+- the shuttle to @destination
+- our docking slot
+- the return ticket
+- tomorrow's departure
+- the direct service
+
+# travel-context
+- because of @delay-reason
+- near ring @ring-number
+- before breakfast
+- after a docking queue
+- without a working map
+- outside the arrivals hall
+
+# composed-rumour-event
+- @rumour-source @rumour-action @rumour-event @rumour-context.
+
+# rumour-source
+- A dockworker
+- My neighbour
+- The local channel
+- Someone from maintenance
+- A courier
+- The night shift
+
+# rumour-action
+- reported that
+- insisted that
+- whispered that
+- claimed that
+- suggested that
+- quietly confirmed that
+
+# rumour-context
+- before station night
+- near @maintenance-place
+- during a shift change
+- after the alarms stopped
+- without naming a source
+- beside @deck-name
+
+# composed-neighbour-event
+- @neighbour-agent @neighbour-action @neighbour-object @neighbour-context.
+
+# neighbour-agent
+- My next-door neighbour
+- The family upstairs
+- Someone across the corridor
+- The cabin beside mine
+- A child on our deck
+- The newest resident
+
+# neighbour-action
+- borrowed
+- found
+- misplaced
+- claimed
+- returned
+- quietly collected
+
+# neighbour-object
+- my spanner
+- a cleaning drone
+- the folding chairs
+- somebody's luggage
+- a maintenance alarm
+- the corridor plants
+
+# neighbour-context
+- during the night cycle
+- before artificial morning
+- near my cabin
+- after the lights dimmed
+- without asking housing
+- beside the central lift

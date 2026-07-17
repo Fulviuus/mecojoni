@@ -1,0 +1,114 @@
+-- SPDX-License-Identifier: MPL-2.0
+-- Demo of the Mecojoni native extension.
+--
+-- On start it runs a fixed-seed batch (visible in the editor Console and in a
+-- headless run): compile hello.meco, round-trip a bytecode/1 artifact, and
+-- compile the multi-module npc package with a playerName input. It then stays
+-- running: press SPACE (or ENTER) to generate fresh random lines, ESC to quit.
+--
+-- Output goes to the console via print(); Defold GUI text needs a font asset,
+-- so this demo keeps the moving parts minimal and prints instead.
+
+local hello_grammar = nil
+local npc_grammar = nil
+
+local function log(line)
+	print(line)
+end
+
+local function generate(label, grammar, seed, entry, data)
+	local result = grammar:generate(seed, entry, data)
+	if result.ok then
+		log(string.format("%s seed %d -> %s", label, seed, result.text))
+	else
+		log(string.format("%s ERROR %s: %s", label, result.error_code, result.error_message))
+	end
+end
+
+local function load_hello()
+	local source = sys.load_resource("/main/data/hello.meco")
+	local grammar, err = mecojoni.compile("hello.meco", source)
+	if not grammar then
+		log("ERROR compiling hello.meco: " .. err.error_message)
+		return nil
+	end
+	log("entries: " .. table.concat(grammar:entries(), ", ") ..
+		" | default: " .. tostring(grammar:default_entry()))
+	for _, warning in ipairs(grammar:warnings()) do
+		log("warning: " .. warning)
+	end
+
+	-- Prove the .mecob artifact path: encode in-memory, reload, compare. A
+	-- game would normally ship artifacts precompiled with the authoring CLI
+	-- and load them with mecojoni.load_artifact(sys.load_resource(...)).
+	local bytes = grammar:encode_artifact(0)
+	local reloaded = mecojoni.load_artifact(bytes)
+	if reloaded then
+		local a = grammar:generate(42)
+		local b = reloaded:generate(42)
+		log(string.format("bytecode/1 artifact round-trip OK (%d bytes), match=%s",
+			#bytes, tostring(a.text == b.text)))
+		return reloaded
+	end
+	return grammar
+end
+
+local function load_npc()
+	local builder = mecojoni.package_builder()
+	local ok, err
+	ok, err = builder:add_module("root", "root.meco", sys.load_resource("/main/data/npc/root.meco"))
+	if not ok then log("ERROR npc root: " .. err.error_message) return nil end
+	ok, err = builder:add_module("common", "common.meco", sys.load_resource("/main/data/npc/common.meco"))
+	if not ok then log("ERROR npc common: " .. err.error_message) return nil end
+	ok, err = builder:resolve_import("root", "./common.meco", "common")
+	if not ok then log("ERROR npc import: " .. err.error_message) return nil end
+	local grammar, cerr = builder:compile()
+	if not grammar then
+		log("ERROR compiling npc package: " .. cerr.error_message)
+		return nil
+	end
+	return grammar
+end
+
+function init(self)
+	msg.post(".", "acquire_input_focus")
+	self.counter = 0
+
+	local v = mecojoni.version()
+	log(string.format("Mecojoni versions: ffi_abi=%d core_api=%d bytecode=%s",
+		v.ffi_abi, v.core_api, v.bytecode))
+
+	hello_grammar = load_hello()
+	npc_grammar = load_npc()
+
+	if hello_grammar then
+		for seed = 0, 4 do
+			generate("hello", hello_grammar, seed, "", nil)
+		end
+	end
+	if npc_grammar then
+		for seed = 0, 2 do
+			generate("npc", npc_grammar, seed, "", { playerName = "Ripley" })
+		end
+	end
+
+	log("MECOJONI DEMO DONE -- press SPACE for more, ESC to quit")
+end
+
+function on_input(self, action_id, action)
+	if action.released then
+		return
+	end
+	if action_id == hash("quit") and action.pressed then
+		msg.post("@system:", "exit", { code = 0 })
+	elseif action_id == hash("generate") and action.pressed then
+		self.counter = self.counter + 1
+		local seed = 1000 + self.counter
+		if hello_grammar then
+			generate("hello", hello_grammar, seed, "", nil)
+		end
+		if npc_grammar then
+			generate("npc", npc_grammar, seed, "", { playerName = "Ripley" })
+		end
+	end
+end
