@@ -1,0 +1,14 @@
+---
+meco: 1.0
+module: npc
+entry: line
+sampler: weighted/1
+inputs:
+  playerName: text
+imports:
+  common: "./common.meco"
+exports: [line]
+---
+
+# line
+- $playerName, @common.observation.

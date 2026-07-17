@@ -16,3 +16,17 @@
 /engines/defold/demo/.internal/
 /engines/defold/demo/.editor_settings
 /engines/defold/demo/mecojoni/lib/
+
+# Unity integration: editor caches, local state, and the staged native
+# library. The Plugins folder keeps its .meta files (import settings, stable
+# GUIDs) in git while the platform binaries themselves stay out.
+/engines/unity/demo/Library/
+/engines/unity/demo/Logs/
+/engines/unity/demo/Temp/
+/engines/unity/demo/UserSettings/
+/engines/unity/demo/obj/
+/engines/unity/demo/*.csproj
+/engines/unity/demo/*.sln
+/engines/unity/demo/Assets/Mecojoni/Plugins/**
+!/engines/unity/demo/Assets/Mecojoni/Plugins/**/
+!/engines/unity/demo/Assets/Mecojoni/Plugins/**/*.meta
