@@ -43,8 +43,20 @@ demo uses only IMGUI and StreamingAssets, no packages).
    engines/unity/build.sh
    ```
 
-2. Open `engines/unity/demo` in Unity and press **Play**. The demo spawns
-   itself into the scene — no scene asset or prefab wiring — and shows:
+2. Open `engines/unity/demo` in Unity and press **Play**. Note that Unity
+   projects have no project *file*: the `demo` folder itself is the project.
+   In Unity Hub use **Add → Add project from disk** and select the
+   `engines/unity/demo` folder (don't browse inside it looking for a file
+   to open — Hub validates it by `ProjectSettings/ProjectVersion.txt`).
+   Alternatively, launch it directly:
+
+   ```sh
+   open -a "/Applications/Unity/Hub/Editor/<version>/Unity.app" \
+       --args -projectPath "$(pwd)/engines/unity/demo"
+   ```
+
+   The demo spawns itself into the scene — no scene asset or prefab
+   wiring — and shows:
 
    ```
    Mecojoni versions: ffi_abi=1 core_api=1 bytecode=bytecode/1
